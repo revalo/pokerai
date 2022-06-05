@@ -12,6 +12,7 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 add_library(infoset pai/mccfr/infoset.cc)
+add_library(infotable pai/mccfr/infotable.cc)
 
 add_executable(liars pai/mccfr/liars_dice.cc)
 
@@ -27,5 +28,17 @@ target_link_libraries(
   infoset
 )
 
+add_executable(
+  infotable_test
+  pai/mccfr/infotable_test.cc
+)
+target_link_libraries(
+  infotable_test
+  gtest_main
+  infotable
+  infoset
+)
+
 include(GoogleTest)
 gtest_discover_tests(infoset_test)
+gtest_discover_tests(infotable_test)

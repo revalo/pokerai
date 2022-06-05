@@ -14,7 +14,8 @@ class RandomNumberGenerator {
 
   // Returns a random integer between min and max, inclusive.
   int randInt(int min, int max);
-  //   int sampleFromProbabilities(const float* probabilities, int numActions);
+  float randFloat();
+  int sampleFromProbabilities(const float* probabilities, int numActions);
 };
 }  // namespace pokerai
 

@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <vector>
 
+#include "absl/strings/str_join.h"
+
 #include "../rng.h"
 
 #define COERCE_PLAYER_INDEX(playerIndex, numPlayers)                           \
@@ -176,8 +178,19 @@ int LiarsDice::getDecidingPlayerIndex(GameNode *node) {
   return rv->decidingPlayerIndex;
 }
 std::string LiarsDice::getInfosetKey(GameNode *node) {
-  auto rv = reinterpret_cast<LiarsDiceGameNode *>(node);
-  return "";
+  auto liarsDiceNode = reinterpret_cast<LiarsDiceGameNode *>(node);
+
+  if (this->isChance(liarsDiceNode)) {
+    return "chance";
+  }
+
+  auto decidingPlayerDice =
+      liarsDiceNode->dice[liarsDiceNode->decidingPlayerIndex];
+  std::vector<int> dice(decidingPlayerDice, decidingPlayerDice + numDice);
+  std::string diceKey = absl::StrJoin(dice, ",");
+  std::string historyKey = absl::StrJoin(liarsDiceNode->history, ",");
+
+  return diceKey + "|" + historyKey;
 }
 
 std::vector<int> *LiarsDice::getValidActions(GameNode *node) {

@@ -68,4 +68,6 @@ TEST(LiarsDiceTest, GameTest) {
   // Player 0 called out Player 1's bet of (4, 3), which is false.
   EXPECT_EQ(game.getTerminalValue(moveNode3, 0), 1);
   EXPECT_EQ(game.getTerminalValue(moveNode3, 1), -1);
+
+  EXPECT_EQ(game.getInfosetKey(moveNode3), "2,3,3|8,20,36");
 }

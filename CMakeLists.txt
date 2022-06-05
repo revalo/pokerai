@@ -12,6 +12,8 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 add_subdirectory(pai/third_party/absl-cpp)
 
+include_directories(pai/third_party)
+
 set(ROOT_DIR pai/mccfr)
 
 set(LIB_SOURCES
@@ -21,6 +23,8 @@ set(LIB_SOURCES
   ${ROOT_DIR}/infotable.h
   ${ROOT_DIR}/rng.cc
   ${ROOT_DIR}/rng.h
+  ${ROOT_DIR}/external_sampling_mccfr.cc
+  ${ROOT_DIR}/external_sampling_mccfr.h
   ${ROOT_DIR}/game/liars_dice.cc
   ${ROOT_DIR}/game/liars_dice.h
   ${ROOT_DIR}/game/game.h
@@ -34,10 +38,11 @@ set(TEST_SOURCES
 )
 
 add_library(pokerai ${LIB_SOURCES})
+target_link_libraries(pokerai absl::strings)
 
 add_executable(playground pai/mccfr/playground.cc)
 add_executable(train pai/mccfr/train.cc)
-target_link_libraries(train pokerai absl::flags absl::flags_parse)
+target_link_libraries(train pokerai absl::strings absl::flags absl::flags_parse)
 
 enable_testing()
 include(GoogleTest)

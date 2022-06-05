@@ -7,16 +7,15 @@
 
 namespace pokerai {
 class ExternalSamplingMCCFR {
- public:
-  game::Game* game;
-  InfoTable* infotable;
+public:
+  game::Game *game;
+  InfoTable *infotable;
   RandomNumberGenerator rng;
 
-  ExternalSamplingMCCFR(game::Game* game, InfoTable* infotable);
-  ~ExternalSamplingMCCFR();
+  ExternalSamplingMCCFR(game::Game *game, InfoTable *infotable);
 
-  int singleIteration(game::GameNode* node, int traversingPlayer);
+  int singleIteration(game::GameNode *node, int traversingPlayer);
 };
-}  // namespace pokerai
+} // namespace pokerai
 
-#endif  // EXT_SAMPLING_MCCFR_H
+#endif // EXT_SAMPLING_MCCFR_H

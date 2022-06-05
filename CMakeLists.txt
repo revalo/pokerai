@@ -26,6 +26,7 @@ set(LIB_SOURCES
 set(TEST_SOURCES
   ${ROOT_DIR}/infoset_test.cc
   ${ROOT_DIR}/infotable_test.cc
+  ${ROOT_DIR}/game/liars_dice_test.cc
 )
 
 add_library(pokerai ${LIB_SOURCES})

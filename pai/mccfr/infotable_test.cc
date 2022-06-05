@@ -17,4 +17,8 @@ TEST(InfoTableTest, GetInfoTable) {
   infoSetK1->regretSums[3] += 3.0f;
   pokerai::InfoSet* infoSetK1_2 = infoTable.get("k1", 5);
   EXPECT_FLOAT_EQ(infoSetK1_2->regretSums[3], 3.0f);
+
+  EXPECT_TRUE(infoTable.contains("k1"));
+  EXPECT_TRUE(infoTable.contains("k2"));
+  EXPECT_FALSE(infoTable.contains("k3"));
 }

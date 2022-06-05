@@ -4,6 +4,7 @@
 
 pokerai::InfoTable::InfoTable(const std::string &filename) {
   this->filename = filename;
+  this->diskBacked = filename.length() > 0;
 }
 
 void pokerai::InfoTable::clear() {

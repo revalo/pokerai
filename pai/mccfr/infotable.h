@@ -2,6 +2,7 @@
 #define INFOTABLE_H
 
 #include <map>
+#include <mutex>
 #include <string>
 
 #include "infoset.h"
@@ -20,6 +21,7 @@ class InfoTable {
   void clear();
   bool contains(const std::string& key);
   InfoSet* get(const std::string& key, int numActions = 0);
+  size_t getSize();
 };
 }  // namespace pokerai
 

@@ -6,6 +6,11 @@
 
 namespace pokerai {
 RandomNumberGenerator::RandomNumberGenerator(int seed) {
+  if (seed < 0) {
+    std::random_device rd;
+    seed = rd();
+  }
+
   srand(seed);
   s0 = rand();
   s1 = rand();

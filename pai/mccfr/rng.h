@@ -9,7 +9,9 @@ class RandomNumberGenerator {
   uint64_t s1;
 
  public:
-  RandomNumberGenerator(int seed = 0);
+  // Initialize the RNG with a seed.
+  // If seed is negative, a random seed will be generated.
+  RandomNumberGenerator(int seed = -1);
   uint64_t next();
 
   // Returns a random integer between min and max, inclusive.

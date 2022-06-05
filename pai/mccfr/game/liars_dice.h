@@ -3,6 +3,7 @@
 
 #include <string>
 
+#include "../rng.h"
 #include "game.h"
 
 namespace pokerai {
@@ -31,6 +32,8 @@ class LiarsDice : public Game {
   int maxDiceFace;
 
  public:
+  RandomNumberGenerator rng;
+
   LiarsDice(int numPlayers = 2, int numDice = 1, int maxDiceFace = 6);
   std::string name() const;
   GameNode* getRootNode();

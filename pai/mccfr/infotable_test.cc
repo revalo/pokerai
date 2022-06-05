@@ -21,4 +21,6 @@ TEST(InfoTableTest, GetInfoTable) {
   EXPECT_TRUE(infoTable.contains("k1"));
   EXPECT_TRUE(infoTable.contains("k2"));
   EXPECT_FALSE(infoTable.contains("k3"));
+
+  EXPECT_EQ(2, infoTable.getSize());
 }

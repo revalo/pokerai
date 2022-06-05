@@ -30,3 +30,5 @@ pokerai::InfoSet *pokerai::InfoTable::get(const std::string &key,
     return it->second;
   }
 }
+
+size_t pokerai::InfoTable::getSize() { return infosets.size(); }

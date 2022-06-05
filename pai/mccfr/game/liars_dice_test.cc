@@ -12,24 +12,24 @@ TEST(LiarsDiceTest, SampleChance) {
   EXPECT_TRUE(game.isChance(rootNode));
 
   auto sampledNode =
-      (pokerai::game::LiarsDiceGameNode*)(game.sampleChance(rootNode));
+      (pokerai::game::LiarsDiceGameNode *)(game.sampleChance(rootNode));
   EXPECT_FALSE(game.isChance(sampledNode));
   EXPECT_TRUE(sampledNode->diceOwner);
   EXPECT_EQ(sampledNode->decidingPlayerIndex, 0);
 }
 
 TEST(LiarsDiceTest, GameTest) {
-  pokerai::game::LiarsDice game(2, 3, 6);
+  pokerai::game::LiarsDice game(2, 3, 6, 0);
   auto rootNode = game.getRootNode();
   auto sampledNode =
-      (pokerai::game::LiarsDiceGameNode*)(game.sampleChance(rootNode));
+      (pokerai::game::LiarsDiceGameNode *)(game.sampleChance(rootNode));
   EXPECT_EQ(sampledNode->decidingPlayerIndex, 0);
   EXPECT_FALSE(game.isTerminal(sampledNode));
   EXPECT_EQ(game.getValidActions(sampledNode)->size(), 36);
 
   // Bet move 8 = (2, 3).
   auto moveNode =
-      (pokerai::game::LiarsDiceGameNode*)game.takeAction(sampledNode, 8);
+      (pokerai::game::LiarsDiceGameNode *)game.takeAction(sampledNode, 8);
   EXPECT_EQ(moveNode->decidingPlayerIndex, 1);
   EXPECT_EQ(moveNode->history.size(), 1);
   EXPECT_EQ(moveNode->history[0], 8);
@@ -41,7 +41,7 @@ TEST(LiarsDiceTest, GameTest) {
 
   // Bet move 20 = (4, 3).
   auto moveNode2 =
-      (pokerai::game::LiarsDiceGameNode*)game.takeAction(moveNode, 20);
+      (pokerai::game::LiarsDiceGameNode *)game.takeAction(moveNode, 20);
   EXPECT_EQ(moveNode2->decidingPlayerIndex, 0);
   EXPECT_EQ(moveNode2->history.size(), 2);
   EXPECT_EQ(moveNode2->history[0], 8);
@@ -51,7 +51,7 @@ TEST(LiarsDiceTest, GameTest) {
   EXPECT_FALSE(game.isTerminal(moveNode2));
 
   // Call LIAR.
-  auto moveNode3 = (pokerai::game::LiarsDiceGameNode*)game.takeAction(
+  auto moveNode3 = (pokerai::game::LiarsDiceGameNode *)game.takeAction(
       moveNode2, game.liarAction);
   EXPECT_EQ(moveNode3->decidingPlayerIndex, 1);
   EXPECT_EQ(moveNode3->history.size(), 3);
@@ -60,4 +60,12 @@ TEST(LiarsDiceTest, GameTest) {
   EXPECT_EQ(moveNode3->history[2], game.liarAction);
   EXPECT_EQ(moveNode2->history.size(), 2);
   EXPECT_TRUE(game.isTerminal(moveNode3));
+
+  // Player 6 does not participate in the game.
+  EXPECT_EQ(game.getTerminalValue(moveNode3, 6), 0);
+
+  // Player 0 has 1 2 6 and player 1 has 2 3 3.
+  // Player 0 called out Player 1's bet of (4, 3), which is false.
+  EXPECT_EQ(game.getTerminalValue(moveNode3, 0), 1);
+  EXPECT_EQ(game.getTerminalValue(moveNode3, 1), -1);
 }

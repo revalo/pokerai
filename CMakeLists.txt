@@ -10,6 +10,7 @@ FetchContent_Declare(
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
+add_subdirectory(pai/third_party/absl-cpp)
 
 set(ROOT_DIR pai/mccfr)
 
@@ -35,6 +36,8 @@ set(TEST_SOURCES
 add_library(pokerai ${LIB_SOURCES})
 
 add_executable(playground pai/mccfr/playground.cc)
+add_executable(train pai/mccfr/train.cc)
+target_link_libraries(train pokerai absl::flags absl::flags_parse)
 
 enable_testing()
 include(GoogleTest)

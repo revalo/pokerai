@@ -51,7 +51,7 @@ class LiarsDice : public Game {
   std::string getInfosetKey(GameNode* node);
 
   int getTerminalValue(GameNode* node, int player);
-  std::vector<int> getValidActions(GameNode* node);
+  std::vector<int>* getValidActions(GameNode* node);
 };
 }  // namespace game
 }  // namespace pokerai

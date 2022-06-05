@@ -20,7 +20,7 @@ class Game {
   virtual std::string getInfosetKey(GameNode* node) = 0;
 
   virtual int getTerminalValue(GameNode* node, int player) = 0;
-  virtual std::vector<int> getValidActions(GameNode* node) = 0;
+  virtual std::vector<int>* getValidActions(GameNode* node) = 0;
 };
 }  // namespace game
 }  // namespace pokerai

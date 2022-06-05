@@ -25,7 +25,7 @@ TEST(LiarsDiceTest, GameTest) {
       (pokerai::game::LiarsDiceGameNode*)(game.sampleChance(rootNode));
   EXPECT_EQ(sampledNode->decidingPlayerIndex, 0);
   EXPECT_FALSE(game.isTerminal(sampledNode));
-  EXPECT_EQ(game.getValidActions(sampledNode).size(), 36);
+  EXPECT_EQ(game.getValidActions(sampledNode)->size(), 36);
 
   // Bet move 8 = (2, 3).
   auto moveNode =
@@ -37,7 +37,7 @@ TEST(LiarsDiceTest, GameTest) {
   EXPECT_FALSE(game.isTerminal(moveNode));
 
   auto validActions = game.getValidActions(moveNode);
-  EXPECT_EQ(validActions.size(), 23);
+  EXPECT_EQ(validActions->size(), 23);
 
   // Bet move 20 = (4, 3).
   auto moveNode2 =

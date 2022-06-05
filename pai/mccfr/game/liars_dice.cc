@@ -135,14 +135,14 @@ std::string LiarsDice::getInfosetKey(GameNode* node) {
   return "";
 }
 
-std::vector<int> LiarsDice::getValidActions(GameNode* node) {
+std::vector<int>* LiarsDice::getValidActions(GameNode* node) {
   auto rv = reinterpret_cast<LiarsDiceGameNode*>(node);
   if (rv->history.size() == 0) {
-    return this->initActions;
+    return &(this->initActions);
   }
 
   int lastAction = rv->history.back();
-  return this->validActionsLUT[lastAction];
+  return &(this->validActionsLUT[lastAction]);
 }
 
 GameNode* LiarsDice::takeAction(GameNode* node, int action) {

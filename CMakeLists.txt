@@ -11,34 +11,35 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-add_library(infoset pai/mccfr/infoset.cc)
-add_library(infotable pai/mccfr/infotable.cc)
+set(ROOT_DIR pai/mccfr)
 
-add_executable(liars pai/mccfr/liars_dice.cc)
+set(LIB_SOURCES
+  ${ROOT_DIR}/infoset.cc
+  ${ROOT_DIR}/infoset.h
+  ${ROOT_DIR}/infotable.cc
+  ${ROOT_DIR}/infotable.h
+  ${ROOT_DIR}/game/liars_dice.cc
+  ${ROOT_DIR}/game/liars_dice.h
+  ${ROOT_DIR}/game/game.h
+)
+
+set(TEST_SOURCES
+  ${ROOT_DIR}/infoset_test.cc
+  ${ROOT_DIR}/infotable_test.cc
+)
+
+add_library(pokerai ${LIB_SOURCES})
+
+add_executable(playground pai/mccfr/playground.cc)
 
 enable_testing()
-
-add_executable(
-  infoset_test
-  pai/mccfr/infoset_test.cc
-)
-target_link_libraries(
-  infoset_test
-  gtest_main
-  infoset
-)
-
-add_executable(
-  infotable_test
-  pai/mccfr/infotable_test.cc
-)
-target_link_libraries(
-  infotable_test
-  gtest_main
-  infotable
-  infoset
-)
-
 include(GoogleTest)
-gtest_discover_tests(infoset_test)
-gtest_discover_tests(infotable_test)
+
+# For each test, add an executable that runs the test.
+# This executable is added to the test target.
+foreach(test_source ${TEST_SOURCES})
+  get_filename_component(test_name ${test_source} NAME_WE)
+  add_executable(${test_name} ${test_source})
+  target_link_libraries(${test_name} gtest_main pokerai)
+  gtest_discover_tests(${test_name})
+endforeach()

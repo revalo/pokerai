@@ -18,6 +18,8 @@ set(LIB_SOURCES
   ${ROOT_DIR}/infoset.h
   ${ROOT_DIR}/infotable.cc
   ${ROOT_DIR}/infotable.h
+  ${ROOT_DIR}/rng.cc
+  ${ROOT_DIR}/rng.h
   ${ROOT_DIR}/game/liars_dice.cc
   ${ROOT_DIR}/game/liars_dice.h
   ${ROOT_DIR}/game/game.h
@@ -26,6 +28,7 @@ set(LIB_SOURCES
 set(TEST_SOURCES
   ${ROOT_DIR}/infoset_test.cc
   ${ROOT_DIR}/infotable_test.cc
+  ${ROOT_DIR}/rng_test.cc
   ${ROOT_DIR}/game/liars_dice_test.cc
 )
 

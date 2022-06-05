@@ -10,16 +10,19 @@ namespace game {
 class LiarsDice;
 
 class LiarsDiceGameNode : public GameNode {
+ public:
   LiarsDice* game;
   bool deal;
   int decidingPlayerIndex;
+  int** dice;
+  bool diceOwner;
 
- public:
   LiarsDiceGameNode(LiarsDice* game, bool deal = false,
-                    int decidingPlayerIndex = 0);
+                    int decidingPlayerIndex = 0, int** dice = NULL);
   bool isChance();
   bool isTerminal();
   int getDecidingPlayerIndex();
+  int getTerminalValue();
 };
 
 class LiarsDice : public Game {
@@ -30,6 +33,9 @@ class LiarsDice : public Game {
  public:
   LiarsDice(int numPlayers = 2, int numDice = 1, int maxDiceFace = 6);
   std::string name() const;
+  GameNode* getRootNode();
+  GameNode* sampleChance(GameNode* node);
+  int getTerminalValue(GameNode* node);
 };
 }  // namespace game
 }  // namespace pokerai

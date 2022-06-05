@@ -8,11 +8,11 @@ pokerai::InfoTable::InfoTable(const std::string &filename) {
 }
 
 void pokerai::InfoTable::clear() {
-  for (std::map<std::string, InfoSet *>::iterator it = infosets.begin();
-       it != infosets.end(); ++it) {
-    delete it->second;
-  }
-  infosets.clear();
+  // for (std::map<std::string, InfoSet *>::iterator it = infosets.begin();
+  //      it != infosets.end(); ++it) {
+  //   delete it->second;
+  // }
+  // infosets.clear();
 }
 
 bool pokerai::InfoTable::contains(const std::string &key) {
@@ -21,14 +21,15 @@ bool pokerai::InfoTable::contains(const std::string &key) {
 
 pokerai::InfoSet *pokerai::InfoTable::get(const std::string &key,
                                           int numActions) {
-  std::map<std::string, InfoSet *>::iterator it = infosets.find(key);
-  if (it == infosets.end()) {
-    InfoSet *infoSet = new InfoSet(numActions);
-    infosets[key] = infoSet;
-    return infoSet;
-  } else {
-    return it->second;
+
+  auto res = infosets.find(key);
+  if (res != infosets.end()) {
+    return res->second;
   }
+
+  InfoSet *infoSet = new InfoSet(numActions);
+  infosets[key] = infoSet;
+  return infoSet;
 }
 
 size_t pokerai::InfoTable::getSize() { return infosets.size(); }

@@ -38,7 +38,7 @@ set(TEST_SOURCES
 )
 
 add_library(pokerai ${LIB_SOURCES})
-target_link_libraries(pokerai absl::strings)
+target_link_libraries(pokerai absl::strings absl::flat_hash_map)
 
 add_executable(playground pai/mccfr/playground.cc)
 add_executable(train pai/mccfr/train.cc)

@@ -22,6 +22,8 @@ class InfoTable {
   bool contains(const std::string &key);
   InfoSet *get(const std::string &key, int numActions = 0);
   size_t getSize();
+  void writeToFile(std::string filename);
+  void loadFromFile(std::string filename);
 };
 }  // namespace pokerai
 

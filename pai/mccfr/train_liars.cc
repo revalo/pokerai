@@ -20,8 +20,9 @@ ABSL_FLAG(int, max_dice_face, 6, "Maximum dice face.");
 ABSL_FLAG(int, seed, 0, "Random seed.");
 ABSL_FLAG(int, iterations, 100000, "Number of iterations.");
 ABSL_FLAG(bool, parallel, false, "Parallelize?");
+ABSL_FLAG(string, output_file, "strategy.dat", "Output file.");
 
-int playRoundWithRandom(
+float playRoundWithRandom(
     pokerai::game::Game<pokerai::game::LiarsDiceGameNode> *game,
     pokerai::InfoTable *infotable, int botPlayerIndex = 0) {
   pokerai::RandomNumberGenerator rng(0);
@@ -92,6 +93,10 @@ void main(int argc, char **argv) {
       mccfr.singleIteration(&rootNode, playerIndex);
     }
   }
+
+  string outputFilename = absl::GetFlag(FLAGS_output_file);
+  cout << "Writing strategy to " << outputFilename << endl;
+  infoTable.writeToFile(outputFilename);
 
   cout << "Evaluation: " << evaluate(&game, &infoTable, 1000) << endl;
 }

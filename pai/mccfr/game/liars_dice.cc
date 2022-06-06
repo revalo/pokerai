@@ -11,9 +11,8 @@
 
 namespace pokerai {
 namespace game {
-LiarsDiceGameNode::LiarsDiceGameNode(LiarsDice *game, bool deal,
-                                     int decidingPlayerIndex, int **dice) {
-  this->game = game;
+LiarsDiceGameNode::LiarsDiceGameNode(bool deal, int decidingPlayerIndex,
+                                     int **dice) {
   this->deal = deal;
   this->decidingPlayerIndex = decidingPlayerIndex;
 
@@ -83,13 +82,16 @@ LiarsDice::~LiarsDice() {
   delete[] this->validActionsLUT;
 }
 
-std::string LiarsDice::name() const { return "LiarsDice"; }
+std::string LiarsDice::name() const { return "liars_dice"; }
 
-GameNode *LiarsDice::getRootNode() {
-  return new LiarsDiceGameNode(this, true, 0, NULL);
+void LiarsDice::getRootNode(LiarsDiceGameNode *resNode) {
+  resNode->deal = true;
+  resNode->decidingPlayerIndex = 0;
+  resNode->dice = NULL;
 }
 
-GameNode *LiarsDice::sampleChance(GameNode *node) {
+void LiarsDice::sampleChance(LiarsDiceGameNode *node,
+                             LiarsDiceGameNode *resNode) {
   int **dice = new int *[numPlayers];
   for (int playerIndex = 0; playerIndex < numPlayers; playerIndex++) {
     dice[playerIndex] = new int[numDice];
@@ -102,29 +104,26 @@ GameNode *LiarsDice::sampleChance(GameNode *node) {
     std::sort(dice[playerIndex], dice[playerIndex] + numDice);
   }
 
-  auto rv = new LiarsDiceGameNode(this, false, 0, dice);
-  rv->diceOwner = true;
-  return rv;
+  resNode->deal = false;
+  resNode->decidingPlayerIndex = 0;
+  resNode->dice = dice;
+  resNode->diceOwner = true;
 }
 
-int LiarsDice::getTerminalValue(GameNode *node, int player) {
-  auto liarsDiceNode = reinterpret_cast<LiarsDiceGameNode *>(node);
-
-  if (liarsDiceNode->history.size() == 0) {
+int LiarsDice::getTerminalValue(LiarsDiceGameNode *node, int player) {
+  if (node->history.size() == 0) {
     return 0;
   }
 
-  if (liarsDiceNode->history.at(liarsDiceNode->history.size() - 1) !=
-      this->liarAction) {
+  if (node->history.at(node->history.size() - 1) != this->liarAction) {
     return 0;
   }
 
-  auto betInQuestion =
-      liarsDiceNode->history[liarsDiceNode->history.size() - 2];
+  auto betInQuestion = node->history[node->history.size() - 2];
   auto playerQuestioning =
-      COERCE_PLAYER_INDEX(liarsDiceNode->decidingPlayerIndex - 1, numPlayers);
+      COERCE_PLAYER_INDEX(node->decidingPlayerIndex - 1, numPlayers);
   auto playerInQuestion =
-      COERCE_PLAYER_INDEX(liarsDiceNode->decidingPlayerIndex - 2, numPlayers);
+      COERCE_PLAYER_INDEX(node->decidingPlayerIndex - 2, numPlayers);
   auto betNum = this->actionQuantity[betInQuestion];
   auto betFace = this->actionFace[betInQuestion];
 
@@ -136,7 +135,7 @@ int LiarsDice::getTerminalValue(GameNode *node, int player) {
   int betFaceCount = 0;
   for (int playerIndex = 0; playerIndex < numPlayers; playerIndex++) {
     for (int diceIndex = 0; diceIndex < numDice; diceIndex++) {
-      if (liarsDiceNode->dice[playerIndex][diceIndex] == betFace) {
+      if (node->dice[playerIndex][diceIndex] == betFace) {
         betFaceCount++;
       }
     }
@@ -161,67 +160,55 @@ int LiarsDice::getTerminalValue(GameNode *node, int player) {
   return 0;
 }
 
-bool LiarsDice::isChance(GameNode *node) {
-  auto rv = reinterpret_cast<LiarsDiceGameNode *>(node);
-  return rv->deal;
-}
-bool LiarsDice::isTerminal(GameNode *node) {
-  auto rv = reinterpret_cast<LiarsDiceGameNode *>(node);
+bool LiarsDice::isChance(LiarsDiceGameNode *node) { return node->deal; }
 
-  if (rv->history.size() == 0) {
+bool LiarsDice::isTerminal(LiarsDiceGameNode *node) {
+  if (node->history.size() == 0) {
     return false;
   }
 
-  if (rv->history.size() >= 20) {
+  if (node->history.size() >= 20) {
     return true;
   }
 
-  if (rv->history.back() == this->liarAction) {
+  if (node->history.back() == this->liarAction) {
     return true;
   }
 
   return false;
 }
-int LiarsDice::getDecidingPlayerIndex(GameNode *node) {
-  auto rv = reinterpret_cast<LiarsDiceGameNode *>(node);
-  return rv->decidingPlayerIndex;
+int LiarsDice::getDecidingPlayerIndex(LiarsDiceGameNode *node) {
+  return node->decidingPlayerIndex;
 }
-std::string LiarsDice::getInfosetKey(GameNode *node) {
-  auto liarsDiceNode = reinterpret_cast<LiarsDiceGameNode *>(node);
-
-  if (this->isChance(liarsDiceNode)) {
+std::string LiarsDice::getInfosetKey(LiarsDiceGameNode *node) {
+  if (this->isChance(node)) {
     return "chance";
   }
 
-  auto decidingPlayerDice =
-      liarsDiceNode->dice[liarsDiceNode->decidingPlayerIndex];
+  auto decidingPlayerDice = node->dice[node->decidingPlayerIndex];
   std::vector<int> dice(decidingPlayerDice, decidingPlayerDice + numDice);
   std::string diceKey = absl::StrJoin(dice, ",");
-  std::string historyKey = absl::StrJoin(liarsDiceNode->history, ",");
+  std::string historyKey = absl::StrJoin(node->history, ",");
 
   return diceKey + "|" + historyKey;
 }
 
-std::vector<int> *LiarsDice::getValidActions(GameNode *node) {
-  auto rv = reinterpret_cast<LiarsDiceGameNode *>(node);
-  if (rv->history.size() == 0) {
+std::vector<int> *LiarsDice::getValidActions(LiarsDiceGameNode *node) {
+  if (node->history.size() == 0) {
     return &(this->initActions);
   }
 
-  int lastAction = rv->history.back();
+  int lastAction = node->history.back();
   return &(this->validActionsLUT[lastAction]);
 }
 
-GameNode *LiarsDice::takeAction(GameNode *node, int action) {
-  auto rv = reinterpret_cast<LiarsDiceGameNode *>(node);
-
-  LiarsDiceGameNode *newNode = new LiarsDiceGameNode(
-      this, false, (rv->decidingPlayerIndex + 1) % numPlayers, rv->dice);
-
-  newNode->history = rv->history;
-  newNode->history.push_back(action);
-
-  return newNode;
+void LiarsDice::takeAction(LiarsDiceGameNode *node, int action,
+                           LiarsDiceGameNode *resNode) {
+  resNode->deal = false;
+  resNode->decidingPlayerIndex = (node->decidingPlayerIndex + 1) % numPlayers;
+  resNode->history = node->history;
+  resNode->history.push_back(action);
+  resNode->dice = node->dice;
 }
 
 }  // namespace game

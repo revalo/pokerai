@@ -19,6 +19,7 @@ class LiarsDiceGameNode : public GameNode {
 
   LiarsDiceGameNode(bool deal = false, int decidingPlayerIndex = 0,
                     int **dice = NULL);
+  ~LiarsDiceGameNode();
 };
 
 class LiarsDice : public Game<LiarsDiceGameNode> {

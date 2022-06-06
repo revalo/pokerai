@@ -23,8 +23,8 @@ set(LIB_SOURCES
   ${ROOT_DIR}/infotable.h
   ${ROOT_DIR}/rng.cc
   ${ROOT_DIR}/rng.h
-  # ${ROOT_DIR}/external_sampling_mccfr.cc
-  # ${ROOT_DIR}/external_sampling_mccfr.h
+  ${ROOT_DIR}/external_sampling_mccfr.cc
+  ${ROOT_DIR}/external_sampling_mccfr.h
   ${ROOT_DIR}/game/liars_dice.cc
   ${ROOT_DIR}/game/liars_dice.h
   ${ROOT_DIR}/game/game.h

@@ -8,23 +8,21 @@
 #include "rng.h"
 
 namespace pokerai {
+template <typename T>
 class ExternalSamplingMCCFR {
-  std::mutex infotableLock;
-
-  float singleIterationInternal(game::GameNode *node, int traversingPlayer,
-                                bool launched);
+  float singleIterationInternal(T *node, int traversingPlayer, bool launched);
 
   bool parallel;
 
  public:
-  game::Game *game;
+  game::Game<T> *game;
   InfoTable *infotable;
   RandomNumberGenerator rng;
 
-  ExternalSamplingMCCFR(game::Game *game, InfoTable *infotable,
+  ExternalSamplingMCCFR(game::Game<T> *game, InfoTable *infotable,
                         bool parallel = false);
 
-  float singleIteration(game::GameNode *node, int traversingPlayer);
+  float singleIteration(T *node, int traversingPlayer);
 };
 }  // namespace pokerai
 

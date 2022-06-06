@@ -5,26 +5,29 @@
 #include <vector>
 
 #include "game/game.h"
+#include "game/liars_dice.h"
 #include "infotable.h"
 #include "rng.h"
 
 namespace pokerai {
-ExternalSamplingMCCFR::ExternalSamplingMCCFR(game::Game *game,
-                                             InfoTable *infotable,
-                                             bool parallel) {
+template <typename T>
+ExternalSamplingMCCFR<T>::ExternalSamplingMCCFR(game::Game<T> *game,
+                                                InfoTable *infotable,
+                                                bool parallel) {
   this->game = game;
   this->infotable = infotable;
   this->rng = RandomNumberGenerator();
   this->parallel = parallel;
 }
 
-float ExternalSamplingMCCFR::singleIterationInternal(game::GameNode *node,
-                                                     int traversingPlayer,
-                                                     bool launched) {
+template <typename T>
+float ExternalSamplingMCCFR<T>::singleIterationInternal(T *node,
+                                                        int traversingPlayer,
+                                                        bool launched) {
   if (game->isChance(node)) {
-    auto sampledNode = game->sampleChance(node);
-    auto rv = singleIterationInternal(sampledNode, traversingPlayer, launched);
-    delete sampledNode;
+    T nextNode = T();
+    game->sampleChance(node, &nextNode);
+    auto rv = singleIterationInternal(&nextNode, traversingPlayer, launched);
     return rv;
   }
 
@@ -35,9 +38,7 @@ float ExternalSamplingMCCFR::singleIterationInternal(game::GameNode *node,
   std::vector<int> *validActions = game->getValidActions(node);
   int numActions = validActions->size();
 
-  infotableLock.lock();
   auto infoset = infotable->get(game->getInfosetKey(node), numActions);
-  infotableLock.unlock();
 
   auto strategy = infoset->getStrategy();
 
@@ -50,34 +51,34 @@ float ExternalSamplingMCCFR::singleIterationInternal(game::GameNode *node,
     if (!parallel || launched) {
       for (int actionIndex = 0; actionIndex < numActions; actionIndex++) {
         int action = validActions->at(actionIndex);
-        auto nextNode = game->takeAction(node, action);
+        T nextNode = T();
+        game->takeAction(node, action, &nextNode);
         utils[actionIndex] =
-            singleIterationInternal(nextNode, traversingPlayer, launched);
+            singleIterationInternal(&nextNode, traversingPlayer, launched);
         infosetUtil += strategy[actionIndex] * utils[actionIndex];
       }
     } else {
       // Launch these in parallel instead.
       // We also need the return value of each thread.
-      std::vector<std::future<float>> futures;
-      for (int actionIndex = 0; actionIndex < numActions; actionIndex++) {
-        int action = validActions->at(actionIndex);
-        auto nextNode = game->takeAction(node, action);
-        futures.push_back(std::async(
-            std::launch::async, &ExternalSamplingMCCFR::singleIterationInternal,
-            this, nextNode, traversingPlayer, true));
-      }
+      // std::vector<std::future<float>> futures;
+      // for (int actionIndex = 0; actionIndex < numActions; actionIndex++) {
+      //   int action = validActions->at(actionIndex);
+      //   auto nextNode = game->takeAction(node, action);
+      //   futures.push_back(std::async(
+      //       std::launch::async,
+      //       &ExternalSamplingMCCFR::singleIterationInternal, this, nextNode,
+      //       traversingPlayer, true));
+      // }
 
-      for (int actionIndex = 0; actionIndex < numActions; actionIndex++) {
-        utils[actionIndex] = futures[actionIndex].get();
-        infosetUtil += strategy[actionIndex] * utils[actionIndex];
-      }
+      // for (int actionIndex = 0; actionIndex < numActions; actionIndex++) {
+      //   utils[actionIndex] = futures[actionIndex].get();
+      //   infosetUtil += strategy[actionIndex] * utils[actionIndex];
+      // }
     }
 
-    infotableLock.lock();
     for (int i = 0; i < numActions; i++) {
       infoset->regretSums[i] += utils[i] - infosetUtil;
     }
-    infotableLock.unlock();
 
     delete[] utils;
     return infosetUtil;
@@ -86,21 +87,22 @@ float ExternalSamplingMCCFR::singleIterationInternal(game::GameNode *node,
   // Other player, just sample.
   int actionIndex = rng.sampleFromProbabilities(strategy, numActions);
   int action = validActions->at(actionIndex);
-  auto nextNode = game->takeAction(node, action);
-  auto util = singleIterationInternal(nextNode, traversingPlayer, launched);
+  T nextNode = T();
+  game->takeAction(node, action, &nextNode);
+  auto util = singleIterationInternal(&nextNode, traversingPlayer, launched);
 
-  infotableLock.lock();
   for (int i = 0; i < numActions; i++) {
     infoset->strategySums[i] += strategy[i];
   }
-  infotableLock.unlock();
-
-  delete nextNode;
   return util;
 }
 
-float ExternalSamplingMCCFR::singleIteration(game::GameNode *node,
-                                             int traversingPlayer) {
+template <typename T>
+float ExternalSamplingMCCFR<T>::singleIteration(T *node, int traversingPlayer) {
   return singleIterationInternal(node, traversingPlayer, false);
 }
+
+// Definition for LiarsDiceGameNode.
+template class ExternalSamplingMCCFR<game::LiarsDiceGameNode>;
+
 }  // namespace pokerai

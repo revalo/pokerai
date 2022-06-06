@@ -21,6 +21,12 @@ LiarsDiceGameNode::LiarsDiceGameNode(bool deal, int decidingPlayerIndex,
   this->diceOwner = false;
 }
 
+LiarsDiceGameNode::~LiarsDiceGameNode() {
+  if (this->diceOwner) {
+    delete[] this->dice;
+  }
+}
+
 LiarsDice::LiarsDice(int numPlayers, int numDice, int maxDiceFace, int seed) {
   this->numPlayers = numPlayers;
   this->numDice = numDice;

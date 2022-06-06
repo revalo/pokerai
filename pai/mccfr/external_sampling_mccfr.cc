@@ -40,7 +40,7 @@ float ExternalSamplingMCCFR<T>::singleIterationInternal(T *node,
   }
 
   std::vector<int> *validActions = game->getValidActions(node);
-  int numActions = validActions->size();
+  int numActions = (int)(validActions->size());
 
   auto infoset = infotable->get(game->getInfosetKey(node), numActions);
 

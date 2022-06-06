@@ -117,7 +117,7 @@ void LiarsDice::sampleChance(LiarsDiceGameNode *node,
   resNode->diceOwner = true;
 }
 
-int LiarsDice::getTerminalValue(LiarsDiceGameNode *node, int player) {
+float LiarsDice::getTerminalValue(LiarsDiceGameNode *node, int player) {
   if (node->history.size() == 0) {
     return 0;
   }
@@ -193,7 +193,9 @@ std::string LiarsDice::getInfosetKey(LiarsDiceGameNode *node) {
   }
 
   auto decidingPlayerDice = node->dice[node->decidingPlayerIndex];
-  std::string diceKey((char *)(decidingPlayerDice), numDice * sizeof(int));
+  // std::string diceKey((char *)(decidingPlayerDice), numDice * sizeof(int));
+  std::string diceKey =
+      absl::StrJoin(decidingPlayerDice, decidingPlayerDice + numDice, ",");
 
   std::string historyKey = "";
   if (node->history.size() < abstractionMoveMemory) {

@@ -51,7 +51,7 @@ class LiarsDice : public Game<LiarsDiceGameNode> {
   int getDecidingPlayerIndex(LiarsDiceGameNode *node);
   std::string getInfosetKey(LiarsDiceGameNode *node);
 
-  int getTerminalValue(LiarsDiceGameNode *node, int player);
+  float getTerminalValue(LiarsDiceGameNode *node, int player);
   std::vector<int> *getValidActions(LiarsDiceGameNode *node);
 };
 }  // namespace game

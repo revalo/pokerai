@@ -21,7 +21,7 @@ class Game {
   virtual int getDecidingPlayerIndex(T *node) = 0;
   virtual std::string getInfosetKey(T *node) = 0;
 
-  virtual int getTerminalValue(T *node, int player) = 0;
+  virtual float getTerminalValue(T *node, int player) = 0;
   virtual std::vector<int> *getValidActions(T *node) = 0;
 };
 }  // namespace game

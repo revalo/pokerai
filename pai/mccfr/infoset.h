@@ -1,6 +1,10 @@
 #ifndef INFOSET_H
 #define INFOSET_H
 
+#include <string>
+
+#include "leveldb/db.h"
+
 namespace pokerai {
 class InfoSet {
  public:
@@ -17,6 +21,9 @@ class InfoSet {
   void reset();
   float *getStrategy();
   float *getAverageStrategy();
+
+  std::string serialize();
+  void deserialize(const std::string &slice);
 };
 }  // namespace pokerai
 

@@ -38,10 +38,11 @@ int playRoundWithRandom(
     }
 
     auto validActions = game->getValidActions(&currentNode);
+    pokerai::InfoSet infoset(validActions->size());
 
     if (game->getDecidingPlayerIndex(&currentNode) == botPlayerIndex) {
-      auto infoset = infotable->get(game->getInfosetKey(&currentNode));
-      auto strategy = infoset->getAverageStrategy();
+      infotable->get(game->getInfosetKey(&currentNode), &infoset);
+      auto strategy = infoset.getAverageStrategy();
       auto actionIndex =
           rng.sampleFromProbabilities(strategy, validActions->size());
       auto action = validActions->at(actionIndex);
@@ -72,7 +73,7 @@ void main(int argc, char **argv) {
       absl::GetFlag(FLAGS_num_players), absl::GetFlag(FLAGS_num_dice),
       absl::GetFlag(FLAGS_max_dice_face), absl::GetFlag(FLAGS_seed));
 
-  pokerai::InfoTable infoTable("info_table.dat");
+  pokerai::InfoTable infoTable("mimmitable");
   auto gamePtr =
       reinterpret_cast<pokerai::game::Game<pokerai::game::LiarsDiceGameNode> *>(
           &game);

@@ -1,5 +1,7 @@
 #include "infoset.h"
 
+#include "leveldb/db.h"
+
 #define MAX_FLOAT(x, y) ((x) > (y) ? (x) : (y))
 #define EPSILON 0.0001f
 
@@ -71,4 +73,16 @@ float *pokerai::InfoSet::getAverageStrategy() {
   }
 
   return averageStrategy;
+}
+
+std::string pokerai::InfoSet::serialize() {
+  std::string regretSums((char *)regretSums, numActions * sizeof(float));
+  std::string strategySums((char *)strategySums, numActions * sizeof(float));
+  return regretSums + strategySums;
+}
+
+void pokerai::InfoSet::deserialize(const std::string &slice) {
+  memcpy(regretSums, slice.data(), numActions * sizeof(float));
+  memcpy(strategySums, slice.data() + numActions * sizeof(float),
+         numActions * sizeof(float));
 }

@@ -42,9 +42,12 @@ float ExternalSamplingMCCFR<T>::singleIterationInternal(T *node,
   std::vector<int> *validActions = game->getValidActions(node);
   int numActions = validActions->size();
 
-  auto infoset = infotable->get(game->getInfosetKey(node), numActions);
+  std::string infosetKey = game->getInfosetKey(node);
+  std::cout << "infosetKey: " << infosetKey << std::endl;
+  InfoSet infoset(numActions);
+  infotable->get(infosetKey, &infoset);
 
-  auto strategy = infoset->getStrategy();
+  auto strategy = infoset.getStrategy();
 
   if (game->getDecidingPlayerIndex(node) == traversingPlayer) {
     // We are traversing the node that is the deciding player.
@@ -55,7 +58,7 @@ float ExternalSamplingMCCFR<T>::singleIterationInternal(T *node,
     if (!parallel || launched) {
       for (int actionIndex = 0; actionIndex < numActions; actionIndex++) {
         if (pruneRegrets &&
-            infoset->regretSums[actionIndex] < regretPruneThreshold &&
+            infoset.regretSums[actionIndex] < regretPruneThreshold &&
             rng.randFloat() < 0.95) {
           continue;
         }
@@ -87,8 +90,9 @@ float ExternalSamplingMCCFR<T>::singleIterationInternal(T *node,
     }
 
     for (int i = 0; i < numActions; i++) {
-      infoset->regretSums[i] += utils[i] - infosetUtil;
+      infoset.regretSums[i] += utils[i] - infosetUtil;
     }
+    infotable->put(infosetKey, &infoset);
 
     delete[] utils;
     return infosetUtil;
@@ -102,8 +106,10 @@ float ExternalSamplingMCCFR<T>::singleIterationInternal(T *node,
   auto util = singleIterationInternal(&nextNode, traversingPlayer, launched);
 
   for (int i = 0; i < numActions; i++) {
-    infoset->strategySums[i] += strategy[i];
+    infoset.strategySums[i] += strategy[i];
   }
+  infotable->put(infosetKey, &infoset);
+
   return util;
 }
 

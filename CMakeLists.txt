@@ -11,8 +11,12 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 add_subdirectory(pai/third_party/absl-cpp)
+add_subdirectory(pai/third_party/leveldb)
 
-include_directories(pai/third_party)
+include_directories(
+  pai/third_party
+  pai/third_party/absl-cpp
+  pai/third_party/leveldb/include)
 
 set(ROOT_DIR pai/mccfr)
 
@@ -38,7 +42,7 @@ set(TEST_SOURCES
 )
 
 add_library(pokerai ${LIB_SOURCES})
-target_link_libraries(pokerai absl::strings absl::flat_hash_map)
+target_link_libraries(pokerai absl::strings absl::flat_hash_map leveldb)
 
 add_executable(playground pai/mccfr/playground.cc)
 add_executable(train_liars pai/mccfr/train_liars.cc)

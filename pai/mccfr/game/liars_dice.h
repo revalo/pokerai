@@ -35,9 +35,10 @@ class LiarsDice : public Game<LiarsDiceGameNode> {
   std::vector<int> initActions;
   int liarAction;
   int maxNumActions;
+  int abstractionMoveMemory;
 
   LiarsDice(int numPlayers = 2, int numDice = 1, int maxDiceFace = 6,
-            int seed = -1);
+            int seed = -1, int abstractionMoveMemory = 3);
   ~LiarsDice();
   std::string name() const;
   void getRootNode(LiarsDiceGameNode *resNode);

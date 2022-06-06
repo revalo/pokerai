@@ -27,11 +27,12 @@ LiarsDiceGameNode::~LiarsDiceGameNode() {
   }
 }
 
-LiarsDice::LiarsDice(int numPlayers, int numDice, int maxDiceFace, int seed) {
+LiarsDice::LiarsDice(int numPlayers, int numDice, int maxDiceFace, int seed,
+                     int abstractionMoveMemory) {
   this->numPlayers = numPlayers;
   this->numDice = numDice;
   this->maxDiceFace = maxDiceFace;
-
+  this->abstractionMoveMemory = abstractionMoveMemory;
   this->rng = RandomNumberGenerator(seed);
 
   // Generate action map, +1 for LIAR.
@@ -193,9 +194,15 @@ std::string LiarsDice::getInfosetKey(LiarsDiceGameNode *node) {
 
   auto decidingPlayerDice = node->dice[node->decidingPlayerIndex];
   std::string diceKey((char *)(decidingPlayerDice), numDice * sizeof(int));
-  std::string historyKey = absl::StrJoin(node->history, ",");
-  // std::string historyKey((char *)(node->history.data()),
-  //                        node->history.size() * sizeof(int));
+
+  std::string historyKey = "";
+  if (node->history.size() < abstractionMoveMemory) {
+    historyKey = absl::StrJoin(node->history, ",");
+  } else {
+    // Only keep the last 3 actions.
+    historyKey = absl::StrJoin(node->history.end() - abstractionMoveMemory,
+                               node->history.end(), ",");
+  }
 
   return diceKey + "|" + historyKey;
 }

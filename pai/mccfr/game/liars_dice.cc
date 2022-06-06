@@ -3,11 +3,10 @@
 #include <algorithm>
 #include <vector>
 
+#include "../rng.h"
 #include "absl/strings/str_join.h"
 
-#include "../rng.h"
-
-#define COERCE_PLAYER_INDEX(playerIndex, numPlayers)                           \
+#define COERCE_PLAYER_INDEX(playerIndex, numPlayers) \
   (numPlayers + (playerIndex % numPlayers)) % numPlayers
 
 namespace pokerai {
@@ -110,6 +109,16 @@ GameNode *LiarsDice::sampleChance(GameNode *node) {
 
 int LiarsDice::getTerminalValue(GameNode *node, int player) {
   auto liarsDiceNode = reinterpret_cast<LiarsDiceGameNode *>(node);
+
+  if (liarsDiceNode->history.size() == 0) {
+    return 0;
+  }
+
+  if (liarsDiceNode->history.at(liarsDiceNode->history.size() - 1) !=
+      this->liarAction) {
+    return 0;
+  }
+
   auto betInQuestion =
       liarsDiceNode->history[liarsDiceNode->history.size() - 2];
   auto playerQuestioning =
@@ -215,5 +224,5 @@ GameNode *LiarsDice::takeAction(GameNode *node, int action) {
   return newNode;
 }
 
-} // namespace game
-} // namespace pokerai
+}  // namespace game
+}  // namespace pokerai

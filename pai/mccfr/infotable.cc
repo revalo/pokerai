@@ -21,7 +21,6 @@ bool pokerai::InfoTable::contains(const std::string &key) {
 
 pokerai::InfoSet *pokerai::InfoTable::get(const std::string &key,
                                           int numActions) {
-
   auto res = infosets.find(key);
   if (res != infosets.end()) {
     return res->second;

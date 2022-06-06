@@ -41,8 +41,8 @@ add_library(pokerai ${LIB_SOURCES})
 target_link_libraries(pokerai absl::strings absl::flat_hash_map)
 
 add_executable(playground pai/mccfr/playground.cc)
-add_executable(train pai/mccfr/train.cc)
-target_link_libraries(train pokerai absl::strings absl::flags absl::flags_parse)
+add_executable(train_liars pai/mccfr/train_liars.cc)
+target_link_libraries(train_liars pokerai absl::strings absl::flags absl::flags_parse)
 
 enable_testing()
 include(GoogleTest)

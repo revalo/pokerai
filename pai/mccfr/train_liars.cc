@@ -82,7 +82,7 @@ void main(int argc, char **argv) {
 
   for (int i = 0; i < absl::GetFlag(FLAGS_iterations); i++) {
     if (i % 100 == 0) {
-      cout << "Iteration " << i << endl;
+      cout << "Iteration " << i << " Infosets: " << infoTable.getSize() << endl;
     }
     for (int playerIndex = 0; playerIndex < absl::GetFlag(FLAGS_num_players);
          playerIndex++) {

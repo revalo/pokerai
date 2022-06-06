@@ -192,9 +192,10 @@ std::string LiarsDice::getInfosetKey(LiarsDiceGameNode *node) {
   }
 
   auto decidingPlayerDice = node->dice[node->decidingPlayerIndex];
-  std::vector<int> dice(decidingPlayerDice, decidingPlayerDice + numDice);
-  std::string diceKey = absl::StrJoin(dice, ",");
+  std::string diceKey((char *)(decidingPlayerDice), numDice * sizeof(int));
   std::string historyKey = absl::StrJoin(node->history, ",");
+  // std::string historyKey((char *)(node->history.data()),
+  //                        node->history.size() * sizeof(int));
 
   return diceKey + "|" + historyKey;
 }

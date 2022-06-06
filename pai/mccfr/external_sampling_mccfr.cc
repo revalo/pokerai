@@ -13,11 +13,15 @@ namespace pokerai {
 template <typename T>
 ExternalSamplingMCCFR<T>::ExternalSamplingMCCFR(game::Game<T> *game,
                                                 InfoTable *infotable,
-                                                bool parallel) {
+                                                bool parallel,
+                                                bool pruneRegrets,
+                                                float regretPruneThreshold) {
   this->game = game;
   this->infotable = infotable;
   this->rng = RandomNumberGenerator();
   this->parallel = parallel;
+  this->pruneRegrets = pruneRegrets;
+  this->regretPruneThreshold = regretPruneThreshold;
 }
 
 template <typename T>
@@ -50,6 +54,12 @@ float ExternalSamplingMCCFR<T>::singleIterationInternal(T *node,
 
     if (!parallel || launched) {
       for (int actionIndex = 0; actionIndex < numActions; actionIndex++) {
+        if (pruneRegrets &&
+            infoset->regretSums[actionIndex] < regretPruneThreshold &&
+            rng.randFloat() < 0.95) {
+          continue;
+        }
+
         int action = validActions->at(actionIndex);
         T nextNode = T();
         game->takeAction(node, action, &nextNode);

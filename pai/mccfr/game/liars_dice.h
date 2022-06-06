@@ -9,27 +9,25 @@
 
 namespace pokerai {
 namespace game {
-class LiarsDice;
-
 class LiarsDiceGameNode : public GameNode {
-public:
-  LiarsDice *game;
+ public:
   bool deal;
   int decidingPlayerIndex;
   int **dice;
   bool diceOwner;
   std::vector<int> history;
 
-  LiarsDiceGameNode(LiarsDice *game, bool deal = false,
-                    int decidingPlayerIndex = 0, int **dice = NULL);
+  LiarsDiceGameNode(bool deal = false, int decidingPlayerIndex = 0,
+                    int **dice = NULL);
+  ~LiarsDiceGameNode();
 };
 
-class LiarsDice : public Game {
+class LiarsDice : public Game<LiarsDiceGameNode> {
   int numPlayers;
   int numDice;
   int maxDiceFace;
 
-public:
+ public:
   RandomNumberGenerator rng;
   int *actionQuantity;
   int *actionFace;
@@ -37,24 +35,26 @@ public:
   std::vector<int> initActions;
   int liarAction;
   int maxNumActions;
+  int abstractionMoveMemory;
 
   LiarsDice(int numPlayers = 2, int numDice = 1, int maxDiceFace = 6,
-            int seed = -1);
+            int seed = -1, int abstractionMoveMemory = 3);
   ~LiarsDice();
   std::string name() const;
-  GameNode *getRootNode();
-  GameNode *sampleChance(GameNode *node);
-  GameNode *takeAction(GameNode *node, int action);
+  void getRootNode(LiarsDiceGameNode *resNode);
+  void sampleChance(LiarsDiceGameNode *node, LiarsDiceGameNode *resNode);
+  void takeAction(LiarsDiceGameNode *node, int action,
+                  LiarsDiceGameNode *resNode);
 
-  bool isChance(GameNode *node);
-  bool isTerminal(GameNode *node);
-  int getDecidingPlayerIndex(GameNode *node);
-  std::string getInfosetKey(GameNode *node);
+  bool isChance(LiarsDiceGameNode *node);
+  bool isTerminal(LiarsDiceGameNode *node);
+  int getDecidingPlayerIndex(LiarsDiceGameNode *node);
+  std::string getInfosetKey(LiarsDiceGameNode *node);
 
-  int getTerminalValue(GameNode *node, int player);
-  std::vector<int> *getValidActions(GameNode *node);
+  int getTerminalValue(LiarsDiceGameNode *node, int player);
+  std::vector<int> *getValidActions(LiarsDiceGameNode *node);
 };
-} // namespace game
-} // namespace pokerai
+}  // namespace game
+}  // namespace pokerai
 
-#endif // GAME_LIARS_DICE_H
+#endif  // GAME_LIARS_DICE_H

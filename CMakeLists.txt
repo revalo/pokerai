@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.10)
 
 project(PokerAI)
 
+set (CMAKE_CXX_STANDARD 11)
+
 include(FetchContent)
 FetchContent_Declare(
   googletest
@@ -12,13 +14,17 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 add_subdirectory(pai/third_party/absl-cpp)
 add_subdirectory(pai/third_party/leveldb)
+add_subdirectory(pai/third_party/ompeval)
 
 include_directories(
   pai/third_party
   pai/third_party/absl-cpp
-  pai/third_party/leveldb/include)
+  pai/third_party/leveldb/include
+  pai/third_party/ompeval
+)
 
 set(ROOT_DIR pai/mccfr)
+set(ABSTRACTION_DIR pai/abstraction)
 
 set(LIB_SOURCES
   ${ROOT_DIR}/infoset.cc
@@ -32,6 +38,8 @@ set(LIB_SOURCES
   ${ROOT_DIR}/game/liars_dice.cc
   ${ROOT_DIR}/game/liars_dice.h
   ${ROOT_DIR}/game/game.h
+  ${ABSTRACTION_DIR}/hand_distribution.cc
+  ${ABSTRACTION_DIR}/hand_distribution.h
 )
 
 set(TEST_SOURCES
@@ -42,13 +50,17 @@ set(TEST_SOURCES
 )
 
 add_library(pokerai ${LIB_SOURCES})
-target_link_libraries(pokerai absl::strings absl::flat_hash_map leveldb)
+target_link_libraries(pokerai absl::strings absl::flat_hash_map leveldb omp)
 
 add_executable(playground pai/mccfr/playground.cc)
 add_executable(train_liars pai/mccfr/train_liars.cc)
 add_executable(play_liars pai/mccfr/play_liars.cc)
+add_executable(omp_playground pai/abstraction/omp_playground.cc)
+add_executable(generate_distributions pai/abstraction/generate_distributions.cc)
 target_link_libraries(train_liars pokerai absl::strings absl::flags absl::flags_parse)
 target_link_libraries(play_liars pokerai absl::strings absl::flags absl::flags_parse)
+target_link_libraries(omp_playground pokerai absl::strings absl::flags absl::flags_parse)
+target_link_libraries(generate_distributions pokerai absl::strings absl::flags absl::flags_parse)
 
 enable_testing()
 include(GoogleTest)

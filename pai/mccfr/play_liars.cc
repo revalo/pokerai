@@ -42,13 +42,13 @@ void main(int argc, char **argv) {
   game->getRootNode(&currentNode);
   game->sampleChance(&currentNode, &currentNode);
 
+  int botPlayerIndex = 1;
+
   cout << "Your dice are: ";
   for (int i = 0; i < absl::GetFlag(FLAGS_num_dice); i++) {
-    cout << currentNode.dice[1][i] << " ";
+    cout << currentNode.dice[1 - botPlayerIndex][i] << " ";
   }
   cout << endl;
-
-  int botPlayerIndex = 0;
 
   while (true) {
     if (game->isTerminal(&currentNode)) {
@@ -63,6 +63,7 @@ void main(int argc, char **argv) {
       }
       cout << ")" << endl;
 
+      cout << "Val = " << val << endl;
       if (val > 0) {
         cout << "Bot won!" << endl;
       } else {
@@ -75,6 +76,10 @@ void main(int argc, char **argv) {
     auto validActions = game->getValidActions(&currentNode);
 
     if (game->getDecidingPlayerIndex(&currentNode) == botPlayerIndex) {
+      if (!infoTable.contains(game->getInfosetKey(&currentNode))) {
+        cout << "Bot doesn't know." << endl;
+      }
+
       auto infoset = infoTable.get(game->getInfosetKey(&currentNode));
       auto strategy = infoset->getAverageStrategy();
       auto actionIndex =

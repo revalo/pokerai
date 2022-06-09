@@ -69,3 +69,51 @@ TEST(RNGTest, SampleFromProbabilities) {
     EXPECT_NEAR(counts[i], 1000 * probabilities[i], 50);
   }
 }
+
+TEST(RNGTest, UniqueRNG) {
+  pokerai::UniqueRandomNumberGenerator rng(51);
+  bool seenAlready[52] = {false};
+
+  for (int trial = 0; trial < 1000; trial++) {
+    for (int i = 0; i < 5; i++) {
+      int randomInteger = rng.next();
+      EXPECT_GE(randomInteger, 0);
+      EXPECT_LE(randomInteger, 51);
+      EXPECT_FALSE(seenAlready[randomInteger]);
+      seenAlready[randomInteger] = true;
+    }
+
+    rng.reset();
+
+    // Reset the seenAlready array.
+    for (int i = 0; i < 52; i++) {
+      seenAlready[i] = false;
+    }
+  }
+}
+
+TEST(RNGTest, UniqueRNGExclude) {
+  // Never generate the following numbers, 7 and 15.
+  uint64_t excludeMask = (1ull << 7) | (1ull << 15);
+  pokerai::UniqueRandomNumberGenerator rng(51, excludeMask);
+  bool seenAlready[52] = {false};
+
+  for (int trial = 0; trial < 1000; trial++) {
+    for (int i = 0; i < 5; i++) {
+      int randomInteger = rng.next();
+      EXPECT_GE(randomInteger, 0);
+      EXPECT_LE(randomInteger, 51);
+      EXPECT_FALSE(seenAlready[randomInteger]);
+      EXPECT_NE(randomInteger, 7);
+      EXPECT_NE(randomInteger, 15);
+      seenAlready[randomInteger] = true;
+    }
+
+    rng.reset();
+
+    // Reset the seenAlready array.
+    for (int i = 0; i < 52; i++) {
+      seenAlready[i] = false;
+    }
+  }
+}

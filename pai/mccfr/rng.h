@@ -19,6 +19,20 @@ class RandomNumberGenerator {
   float randFloat();
   int sampleFromProbabilities(const float* probabilities, int numActions);
 };
+
+class UniqueRandomNumberGenerator {
+  RandomNumberGenerator rng;
+  int currentIndex;
+  int* slots;
+  int max;
+
+ public:
+  // Generated numbers will be between 0 and max. Inclusive.
+  UniqueRandomNumberGenerator(int max, uint64_t excludeMask = 0);
+  ~UniqueRandomNumberGenerator();
+  void reset();
+  int next();
+};
 }  // namespace pokerai
 
 #endif  // RNG_H

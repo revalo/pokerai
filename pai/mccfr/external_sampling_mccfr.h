@@ -24,7 +24,7 @@ class ExternalSamplingMCCFR {
 
   ExternalSamplingMCCFR(game::Game<T> *game, InfoTable *infotable,
                         bool parallel = false, bool pruneRegrets = true,
-                        float regretPruneThreshold = -50.0f);
+                        float regretPruneThreshold = -1000.0f);
 
   float singleIteration(T *node, int traversingPlayer);
 };

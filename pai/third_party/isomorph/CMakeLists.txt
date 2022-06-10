@@ -5,7 +5,7 @@ project(isomorph)
 set (CMAKE_CXX_STANDARD 20)
 
 set(LIB_SOURCES
-    deck.c
+    deck.cc
     deck.h
     hand_index-impl.h
     hand_index.cc
@@ -13,3 +13,6 @@ set(LIB_SOURCES
 )
 
 add_library(isomorph ${LIB_SOURCES})
+
+add_executable(isomorphtest check_main.cc)
+target_link_libraries(isomorphtest isomorph)

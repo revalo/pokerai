@@ -10,35 +10,12 @@
 #include <bitset>
 #include <cstdint>
 
+#include "deck.h"
+
 #define MAX_GROUP_INDEX 0x100000
 #define MAX_CARDS_PER_ROUND 15
 #define ROUND_SHIFT 4
 #define ROUND_MASK 0xf
-
-#ifdef __cplusplus
-#define INITIALIZER(f)    \
-  static void f(void);    \
-  struct f##_t_ {         \
-    f##_t_(void) { f(); } \
-  };                      \
-  static f##_t_ f##_;     \
-  static void f(void)
-#elif defined(_MSC_VER)
-#pragma section(".CRT$XCU", read)
-#define INITIALIZER2_(f, p)                                \
-  static void f(void);                                     \
-  __declspec(allocate(".CRT$XCU")) void (*f##_)(void) = f; \
-  __pragma(comment(linker, "/include:" p #f "_")) static void f(void)
-#ifdef _WIN64
-#define INITIALIZER(f) INITIALIZER2_(f, "")
-#else
-#define INITIALIZER(f) INITIALIZER2_(f, "_")
-#endif
-#else
-#define INITIALIZER(f)                              \
-  static void f(void) __attribute__((constructor)); \
-  static void f(void)
-#endif
 
 static uint8_t nth_unset[1 << RANKS][RANKS];
 static bool equal[1 << (SUITS - 1)][SUITS];
@@ -56,7 +33,7 @@ INITIALIZER(hand_index_ctor) {
   for (uint_fast32_t i = 0; i < 1 << RANKS; ++i) {
     for (uint_fast32_t j = 0, set = ~i & (1 << RANKS) - 1; j < RANKS;
          ++j, set &= set - 1) {
-      nth_unset[i][j] = set ? std::countl_zero(set) : 0xff;
+      nth_unset[i][j] = set ? std::countr_zero(set) : 0xff;
     }
   }
 
@@ -81,7 +58,7 @@ INITIALIZER(hand_index_ctor) {
 
   for (uint_fast32_t i = 0; i < 1 << RANKS; ++i) {
     for (uint_fast32_t set = i, j = 1; set; ++j, set &= set - 1) {
-      rank_set_to_index[i] += nCr_ranks[std::countl_zero(set)][j];
+      rank_set_to_index[i] += nCr_ranks[std::countr_zero(set)][j];
     }
     index_to_rank_set[std::popcount(i)][rank_set_to_index[i]] = i;
   }
@@ -697,7 +674,7 @@ bool hand_unindex(const hand_indexer_t* indexer, uint_fast32_t round,
       for (uint_fast32_t k = 0; k < n; ++k) {
         uint_fast32_t shifted_card = shifted_cards & -shifted_cards;
         shifted_cards ^= shifted_card;
-        uint_fast32_t card = nth_unset[used][std::countl_zero(shifted_card)];
+        uint_fast32_t card = nth_unset[used][std::countr_zero(shifted_card)];
         rank_set |= 1 << card;
         cards[location[j]++] = deck_make_card(i, card);
       }

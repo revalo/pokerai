@@ -15,6 +15,7 @@ FetchContent_MakeAvailable(googletest)
 add_subdirectory(pai/third_party/absl-cpp)
 add_subdirectory(pai/third_party/leveldb)
 add_subdirectory(pai/third_party/ompeval)
+add_subdirectory(pai/third_party/isomorph)
 
 include_directories(
   pai/third_party
@@ -50,7 +51,7 @@ set(TEST_SOURCES
 )
 
 add_library(pokerai ${LIB_SOURCES})
-target_link_libraries(pokerai absl::strings absl::flat_hash_map leveldb omp)
+target_link_libraries(pokerai absl::strings absl::flat_hash_map leveldb omp isomorph)
 
 add_executable(playground pai/mccfr/playground.cc)
 add_executable(train_liars pai/mccfr/train_liars.cc)

@@ -44,9 +44,11 @@ void main() {
   float v = 0;
   Hand playerHand =
       distGenerator.getBoardFromBitmask(playerCardsMask | boardCardsMask);
+  Hand boardHand = distGenerator.getBoardFromBitmask(boardCardsMask);
 
   for (uint64_t i = 0; i < trials; i++) {
-    v = distGenerator.handStrength(playerHand, playerCardsMask, boardCardsMask);
+    v = distGenerator.handStrength(playerHand, boardHand, playerCardsMask,
+                                   boardCardsMask);
     // eval.evaluate(hand);
   }
 

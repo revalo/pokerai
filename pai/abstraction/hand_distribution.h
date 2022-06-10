@@ -18,11 +18,12 @@ class HandDistribution {
 
   Hand getBoardFromBitmask(uint64_t cards);
 
-  float handStrength(const Hand &playerHand, uint64_t playerCardsMask,
-                     uint64_t boardCardsMask);
+  float handStrength(const Hand &playerHand, const Hand &boardHand,
+                     uint64_t playerCardsMask, uint64_t boardCardsMask);
 
   void getHandDistribution(uint64_t playerCardsMask,
                            std::vector<float> &distribution,
+                           uint64_t existingBoardCardMask = 0,
                            int trials = 10000);
 };
 }  // namespace pokerai

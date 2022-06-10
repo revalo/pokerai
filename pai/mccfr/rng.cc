@@ -55,13 +55,10 @@ int RandomNumberGenerator::sampleFromProbabilities(const float *probabilities,
 UniqueRandomNumberGenerator::UniqueRandomNumberGenerator(int max,
                                                          uint64_t excludeMask) {
   // Count number of 1s in excludeMask.
-  int numExclude = 0;
-  for (int i = 0; i < 64; i++) {
-    if (excludeMask & (1ull << i)) numExclude++;
-  }
+  int numExclude = std::popcount(excludeMask);
 
   this->max = max - numExclude;
-  slots = new int[max + 1 - numExclude];
+  slots = new int[(max + 1) - numExclude + 1];
   int slotIndex = 0;
   for (int i = 0; i < max + 1; i++) {
     if (excludeMask & (1ull << i)) {

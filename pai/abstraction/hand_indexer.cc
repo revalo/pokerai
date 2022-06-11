@@ -2,13 +2,14 @@
 
 #include <bit>
 #include <bitset>
+#include <cmath>
 #include <stdexcept>
 
 namespace pokerai {
 HandIndexer::HandIndexer(std::vector<int> cardsPerRound) {
   // Precompute tables.
-  nCrGroups = new long[MAX_GROUP_INDEX][N_SUITS + 1];
-  memset(nCrGroups, 0, sizeof(long) * MAX_GROUP_INDEX * (N_SUITS + 1));
+  nCrGroups = new int64_t[MAX_GROUP_INDEX][N_SUITS + 1];
+  memset(nCrGroups, 0, sizeof(int64_t) * MAX_GROUP_INDEX * (N_SUITS + 1));
 
   for (uint_fast32_t i = 0; i < 1 << (N_SUITS - 1); ++i) {
     for (uint_fast32_t j = 1; j < N_SUITS; ++j) {
@@ -77,7 +78,7 @@ HandIndexer::HandIndexer(std::vector<int> cardsPerRound) {
   configurationToEqual = new int*[rounds];
   configuration = new int**[rounds];
   configurationToSuitSize = new int**[rounds];
-  configurationToOffset = new long*[rounds];
+  configurationToOffset = new int64_t*[rounds];
 
   for (int i = 0, count = 0; i < rounds; ++i) {
     count += cardsPerRound[i];
@@ -100,8 +101,8 @@ HandIndexer::HandIndexer(std::vector<int> cardsPerRound) {
     configurationToEqual[i] = new int[configurations[i]];
     memset(configurationToEqual[i], 0, sizeof(int) * configurations[i]);
 
-    configurationToOffset[i] = new long[configurations[i]];
-    memset(configurationToOffset[i], 0, sizeof(long) * configurations[i]);
+    configurationToOffset[i] = new int64_t[configurations[i]];
+    memset(configurationToOffset[i], 0, sizeof(int64_t) * configurations[i]);
 
     configuration[i] = new int*[configurations[i]];
     configurationToSuitSize[i] = new int*[configurations[i]];
@@ -116,11 +117,11 @@ HandIndexer::HandIndexer(std::vector<int> cardsPerRound) {
   memset(configurations, 0, sizeof(int) * rounds);
   EnumerateConfigurations(true);  // Tabulate.
 
-  roundSize = new long[rounds];
+  roundSize = new int64_t[rounds];
   for (int i = 0; i < rounds; ++i) {
-    long accum = 0;
+    int64_t accum = 0;
     for (int j = 0; j < configurations[i]; ++j) {
-      long next = accum + configurationToOffset[i][j];
+      int64_t next = accum + configurationToOffset[i][j];
       configurationToOffset[i][j] = accum;
       accum = next;
     }
@@ -137,11 +138,162 @@ HandIndexer::HandIndexer(std::vector<int> cardsPerRound) {
   }
 
   enumeratePermutations(true);  // Tabulate.
+
+  publicFlopHands = new int*[roundSize[0]];
+  for (int i = 0; i < roundSize[0]; ++i) {
+    publicFlopHands[i] = new int[cardsPerRound[0]];  // check
+    memset(publicFlopHands[i], 0, sizeof(int) * cardsPerRound[0]);
+  }
 }
 
 HandIndexer::~HandIndexer() {
   delete[] suitPermutations;
   delete[] nCrGroups;
+
+  // TODO(shreyask): Delete all the dynamically allocated memory.
+}
+
+void HandIndexer::CreatePublicFlopHands() {
+  bool* publicFlopHandsFound = new bool[roundSize[0]];
+
+  // Reset to 0.
+  for (int i = 0; i < roundSize[0]; ++i) {
+    memset(publicFlopHands[i], 0, sizeof(int) * cardsPerRound[0]);
+  }
+
+  for (int card1 = 0; card1 < 52; card1++) {
+    for (int card2 = 0; card2 < 52; card2++) {
+      for (int card3 = 0; card3 < 52; card3++) {
+        if (card1 != card2 && card2 != card3 && card1 != card3) {
+          int64_t index = indexLast(new int[]{card1, card2, card3});
+          if (!publicFlopHandsFound[index]) {
+            publicFlopHandsFound[index] = true;
+            publicFlopHands[index] = new int[]{card1, card2, card3};
+          }
+        }
+      }
+    }
+  }
+
+  delete[] publicFlopHandsFound;
+}
+
+void HandIndexer::Swap(int* suitIndex, int u, int v) {
+  if (suitIndex[u] > suitIndex[v]) {
+    int tmp = suitIndex[u];
+    suitIndex[u] = suitIndex[v];
+    suitIndex[v] = tmp;
+  }
+}
+
+int64_t HandIndexer::indexNextRound(HandIndexerState& state, int* cards) {
+  int round = state.round++;
+
+  int ranks[N_SUITS] = {0};
+  int shiftedRanks[N_SUITS] = {0};
+
+  for (int i = 0, j = roundStart[round]; i < cardsPerRound[round]; ++i, ++j) {
+    int rank = cards[j] >> 2, suit = cards[j] & 3, rankBit = 1 << rank;
+    ranks[suit] |= rankBit;
+    shiftedRanks[suit] |=
+        (rankBit >>
+         std::popcount((uint32_t)((rankBit - 1) & state.usedRanks[suit])));
+  }
+
+  for (int i = 0; i < N_SUITS; ++i) {
+    int usedSize = std::popcount((uint32_t)state.usedRanks[i]),
+        thisSize = std::popcount((uint32_t)ranks[i]);
+    state.suitIndex[i] +=
+        state.suitMultiplier[i] * rankSetToIndex[shiftedRanks[i]];
+    state.suitMultiplier[i] *= nCrRanks[N_RANKS - usedSize][thisSize];
+    state.usedRanks[i] |= ranks[i];
+  }
+
+  for (int i = 0, remaining = cardsPerRound[round]; i < N_SUITS - 1; ++i) {
+    int thisSize = std::popcount((uint32_t)(ranks[i]));
+    state.permutationIndex += state.permutationMultiplier * thisSize;
+    state.permutationMultiplier *= remaining + 1;
+    remaining -= thisSize;
+  }
+
+  int configuration = permutationToConfiguration[round][state.permutationIndex];
+  int piIndex = permutationToPi[round][state.permutationIndex];
+  int equalIndex = configurationToEqual[round][configuration];
+  int64_t offset = configurationToOffset[round][configuration];
+  int* pi = suitPermutations[piIndex];
+
+  int suitIndex[N_SUITS];
+  int suitMultiplier[N_SUITS];
+  memset(suitIndex, 0, sizeof(int) * N_SUITS);
+  memset(suitMultiplier, 0, sizeof(int) * N_SUITS);
+
+  for (int i = 0; i < N_SUITS; ++i) {
+    suitIndex[i] = state.suitIndex[pi[i]];
+    suitMultiplier[i] = state.suitMultiplier[pi[i]];
+  }
+
+  int64_t index = offset, multiplier = 1;
+
+  for (int i = 0; i < N_SUITS;) {
+    int64_t part, size;
+
+    if (i + 1 < N_SUITS && equal[equalIndex, i + 1]) {
+      if (i + 2 < N_SUITS && equal[equalIndex, i + 2]) {
+        if (i + 3 < N_SUITS && equal[equalIndex, i + 3]) {
+          Swap(suitIndex, i, i + 1);
+          Swap(suitIndex, i + 2, i + 3);
+          Swap(suitIndex, i, i + 2);
+          Swap(suitIndex, i + 1, i + 3);
+          Swap(suitIndex, i + 1, i + 2);
+          part = suitIndex[i] + nCrGroups[suitIndex[i + 1] + 1][2] +
+                 nCrGroups[suitIndex[i + 2] + 2][3] +
+                 nCrGroups[suitIndex[i + 3] + 3][4];
+          size = nCrGroups[suitMultiplier[i] + 3][4];
+          i += 4;
+        } else {
+          Swap(suitIndex, i, i + 1);
+          Swap(suitIndex, i, i + 2);
+          Swap(suitIndex, i + 1, i + 2);
+          part = suitIndex[i] + nCrGroups[suitIndex[i + 1] + 1][2] +
+                 nCrGroups[suitIndex[i + 2] + 2][3];
+          size = nCrGroups[suitMultiplier[i] + 2][3];
+          i += 3;
+        }
+      } else {
+        Swap(suitIndex, i, i + 1);
+        part = suitIndex[i] + nCrGroups[suitIndex[i + 1] + 1][2];
+        size = nCrGroups[suitMultiplier[i] + 1][2];
+        i += 2;
+      }
+    } else {
+      part = suitIndex[i];
+      size = suitMultiplier[i];
+      i += 1;
+    }
+
+    index += multiplier * part;
+    multiplier *= size;
+  }
+  return index;
+}
+
+int64_t HandIndexer::indexAll(int* cards, int64_t* indices) {
+  if (rounds > 0) {
+    HandIndexerState state;
+    for (int i = 0; i < rounds; i++) {
+      indices[i] = indexNextRound(state, cards);
+    }
+    return indices[rounds - 1];
+  }
+  return 0;
+}
+
+int64_t HandIndexer::indexLast(int* cards) {
+  int64_t* indices = new int64_t[rounds];
+  memset(indices, 0, sizeof(int64_t) * rounds);
+  auto rv = indexAll(cards, indices);
+  delete[] indices;
+  return rv;
 }
 
 void HandIndexer::EnumerateConfigurations(bool tabulate) {
@@ -224,7 +376,7 @@ void HandIndexer::tabulateConfigurations(int round, int* configuration) {
   }
 OUT:
   configurationToOffset[round][id] = 1;
-  memcpy(this->configuration[round][id], configuration, N_SUITS);
+  memcpy(this->configuration[round][id], configuration, N_SUITS * sizeof(int));
 
   int equal = 0;
   for (int i = 0; i < N_SUITS;) {
@@ -388,6 +540,113 @@ void HandIndexer::tabulatePermutations(int round, int* count) {
   }
 
   permutationToConfiguration[round][idx] = low;
+}
+
+bool HandIndexer::unindex(int round, int64_t index, int* cards) {
+  if (round >= rounds || index >= roundSize[round]) return false;
+  int low = 0, high = configurations[round];
+  int configurationIdx = 0;
+
+  while ((uint32_t)low <
+         (uint32_t)high)  // while (integer.compareUnsigned(low, high) < 0)
+  {
+    // int mid = integer.divideUnsigned(low + high, 2);
+    int mid = ((low + high) / 2);
+    if (configurationToOffset[round][mid] <= index) {
+      configurationIdx = mid;
+      low = mid + 1;
+    } else {
+      high = mid;
+    }
+  }
+  index -= configurationToOffset[round][configurationIdx];
+
+  int64_t suitIndex[N_SUITS];
+  memset(suitIndex, 0, sizeof(int64_t) * N_SUITS);
+
+  for (int i = 0; i < N_SUITS;) {
+    int j = i + 1;
+    while (j < N_SUITS && configuration[round][configurationIdx][j] ==
+                              configuration[round][configurationIdx][i]) {
+      ++j;
+    }
+
+    int suitSize = configurationToSuitSize[round][configurationIdx][i];
+    int64_t groupSize = nCrGroups[suitSize + j - i - 1][j - i];
+    // int groupIndex = int.remainderUnsigned(index, groupSize);
+
+    int64_t groupIndex = (int64_t)((uint64_t)index % (uint64_t)groupSize);
+    // index = int.divideUnsigned(index, groupSize);
+
+    index = (int64_t)((uint64_t)index / (uint64_t)groupSize);
+
+    for (; i < j - 1; ++i) {
+      // suitIndex[i] = (int)Math.Floor(
+      //     Math.Exp(Math.Log(groupIndex) / (j - i) - 1 + Math.Log(j - i)) - j
+      //     - i);
+      suitIndex[i] = (int)std::floor(
+          std::exp(std::log(groupIndex) / (j - i) - 1 + std::log(j - i)) - j -
+          i);
+
+      // low = (int)Math.Floor(
+      //     Math.Exp(Math.Log(groupIndex) / (j - i) - 1 + Math.Log(j - i)) - j
+      //     - i);
+      low = (int)std::floor(
+          std::exp(std::log(groupIndex) / (j - i) - 1 + std::log(j - i)) - j -
+          i);
+      // high = (int)Math.Ceiling(
+      //     Math.Exp(Math.Log(groupIndex) / (j - i) + Math.Log(j - i)) - j + i
+      //     + 1);
+      high = (int)std::ceil(
+          std::exp(std::log(groupIndex) / (j - i) + std::log(j - i)) - j + i +
+          1);
+      if ((uint32_t)high > (uint32_t)suitSize) {
+        high = suitSize;
+      }
+      if ((uint32_t)high <= (uint32_t)low) {
+        low = 0;
+      }
+      while ((uint32_t)low < (uint32_t)high) {
+        int mid = (int)((uint32_t)(low + high) / 2);
+        if (nCrGroups[mid + j - i - 1][j - i] <= groupIndex) {
+          suitIndex[i] = mid;
+          low = mid + 1;
+        } else {
+          high = mid;
+        }
+      }
+      groupIndex -= nCrGroups[(suitIndex[i] + j - i - 1)][j - i];
+    }
+
+    suitIndex[i] = groupIndex;
+    ++i;
+  }
+
+  int* location = new int[rounds];
+  memcpy(location, roundStart, sizeof(int) * rounds);
+  for (int i = 0; i < N_SUITS; ++i) {
+    int used = 0, m = 0;
+    for (int j = 0; j < rounds; ++j) {
+      int n = configuration[round][configurationIdx][i] >>
+                  (ROUND_SHIFT * (rounds - j - 1)) &
+              ROUND_MASK;
+      int roundSize = nCrRanks[N_RANKS - m][n];
+      m += n;
+      int roundIdx = (int)((uint64_t)suitIndex[i] % (uint64_t)roundSize);
+      suitIndex[i] = (int64_t)((uint64_t)suitIndex[i] / (uint64_t)roundSize);
+      int shiftedCards = indexToRankSet[n][roundIdx], rankSet = 0;
+      for (int k = 0; k < n; ++k) {
+        int shiftedCard = shiftedCards & -shiftedCards;
+        shiftedCards ^= shiftedCard;
+        int card = nthUnset[used][std::countr_zero((uint32_t)shiftedCard)];
+        rankSet |= (1 << card);
+        cards[location[j]++] = card << 2 | i;
+      }
+      used |= rankSet;
+    }
+  }
+  delete[] location;
+  return true;
 }
 
 }  // namespace pokerai

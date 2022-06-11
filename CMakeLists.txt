@@ -15,7 +15,7 @@ FetchContent_MakeAvailable(googletest)
 add_subdirectory(pai/third_party/absl-cpp)
 add_subdirectory(pai/third_party/leveldb)
 add_subdirectory(pai/third_party/ompeval)
-add_subdirectory(pai/third_party/isomorph)
+# add_subdirectory(pai/third_party/isomorph)
 
 include_directories(
   pai/third_party
@@ -41,6 +41,8 @@ set(LIB_SOURCES
   ${ROOT_DIR}/game/game.h
   ${ABSTRACTION_DIR}/hand_distribution.cc
   ${ABSTRACTION_DIR}/hand_distribution.h
+  ${ABSTRACTION_DIR}/hand_indexer.h
+  ${ABSTRACTION_DIR}/hand_indexer.cc
 )
 
 set(TEST_SOURCES
@@ -51,17 +53,19 @@ set(TEST_SOURCES
 )
 
 add_library(pokerai ${LIB_SOURCES})
-target_link_libraries(pokerai absl::strings absl::flat_hash_map leveldb omp isomorph)
+target_link_libraries(pokerai absl::strings absl::flat_hash_map leveldb omp)
 
 add_executable(playground pai/mccfr/playground.cc)
 add_executable(train_liars pai/mccfr/train_liars.cc)
 add_executable(play_liars pai/mccfr/play_liars.cc)
 add_executable(omp_playground pai/abstraction/omp_playground.cc)
 add_executable(generate_distributions pai/abstraction/generate_distributions.cc)
+add_executable(hand_indexer_playground pai/abstraction/hand_indexer_playground.cc)
 target_link_libraries(train_liars pokerai absl::strings absl::flags absl::flags_parse)
 target_link_libraries(play_liars pokerai absl::strings absl::flags absl::flags_parse)
 target_link_libraries(omp_playground pokerai absl::strings absl::flags absl::flags_parse)
 target_link_libraries(generate_distributions pokerai absl::strings absl::flags absl::flags_parse)
+target_link_libraries(hand_indexer_playground pokerai absl::strings absl::flags absl::flags_parse)
 
 enable_testing()
 include(GoogleTest)

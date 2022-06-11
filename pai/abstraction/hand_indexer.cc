@@ -70,7 +70,7 @@ HandIndexer::HandIndexer(std::vector<int> cardsPerRound) {
 
   // Initialize hand indexer.
   this->cardsPerRound = cardsPerRound;
-  rounds = cardsPerRound.size();
+  rounds = (int)cardsPerRound.size();
 
   permutationToConfiguration = new int*[rounds];
   permutationToPi = new int*[rounds];
@@ -94,6 +94,7 @@ HandIndexer::HandIndexer(std::vector<int> cardsPerRound) {
 
   configurations = new int[rounds];
   memset(configurations, 0, sizeof(int) * rounds);
+  EnumerateConfigurations(false);  // Count.
 
   for (int i = 0; i < rounds; ++i) {
     configurationToEqual[i] = new int[configurations[i]];
@@ -112,6 +113,9 @@ HandIndexer::HandIndexer(std::vector<int> cardsPerRound) {
     }
   }
 
+  memset(configurations, 0, sizeof(int) * rounds);
+  EnumerateConfigurations(true);  // Tabulate.
+
   roundSize = new long[rounds];
   for (int i = 0; i < rounds; ++i) {
     long accum = 0;
@@ -125,11 +129,14 @@ HandIndexer::HandIndexer(std::vector<int> cardsPerRound) {
 
   permutations = new int[rounds];
   memset(permutations, 0, sizeof(int) * rounds);
+  enumeratePermutations(false);  // Count.
 
   for (int i = 0; i < rounds; ++i) {
     permutationToConfiguration[i] = new int[permutations[i]];
     permutationToPi[i] = new int[permutations[i]];
   }
+
+  enumeratePermutations(true);  // Tabulate.
 }
 
 HandIndexer::~HandIndexer() {
@@ -147,7 +154,240 @@ void HandIndexer::EnumerateConfigurations(bool tabulate) {
 void HandIndexer::enumerateConfigurationsR(int round, int remaining, int suit,
                                            int equal, int* used,
                                            int* configuration, bool tabulate) {
-  // hi
+  if (suit == N_SUITS) {
+    if (tabulate) {
+      tabulateConfigurations(round, configuration);
+    } else {
+      ++configurations[round];
+    }
+
+    if (round + 1 < rounds) {
+      enumerateConfigurationsR(round + 1, cardsPerRound[round + 1], 0, equal,
+                               used, configuration, tabulate);
+    }
+  } else {
+    int min = 0;
+    if (suit == N_SUITS - 1) {
+      min = remaining;
+    }
+
+    int max = N_RANKS - used[suit];
+    if (remaining < max) {
+      max = remaining;
+    }
+
+    int previous = N_RANKS + 1;
+    bool wasEqual = (equal & 1 << suit) != 0;
+    if (wasEqual) {
+      previous =
+          configuration[suit - 1] >> (ROUND_SHIFT * (rounds - round - 1)) &
+          ROUND_MASK;
+      if (previous < max) {
+        max = previous;
+      }
+    }
+
+    int oldConfiguration = configuration[suit], oldUsed = used[suit];
+    for (int i = min; i <= max; ++i) {
+      int newConfiguration =
+          oldConfiguration | i << (ROUND_SHIFT * (rounds - round - 1));
+      int newEqual = ((equal & ~(1 << suit)) |
+                      (wasEqual & (i == previous) ? 1 : 0) << suit);
+
+      used[suit] = oldUsed + i;
+      configuration[suit] = newConfiguration;
+      enumerateConfigurationsR(round, remaining - i, suit + 1, newEqual, used,
+                               configuration, tabulate);
+      configuration[suit] = oldConfiguration;
+      used[suit] = oldUsed;
+    }
+  }
+}
+
+void HandIndexer::tabulateConfigurations(int round, int* configuration) {
+  int id = configurations[round]++;
+  for (; id > 0; --id) {
+    for (int i = 0; i < N_SUITS; ++i) {
+      if (configuration[i] < this->configuration[round][id - 1][i]) {
+        break;
+      } else if (configuration[i] > this->configuration[round][id - 1][i]) {
+        goto OUT;
+      }
+    }
+    for (int i = 0; i < N_SUITS; ++i) {
+      this->configuration[round][id][i] = this->configuration[round][id - 1][i];
+      configurationToSuitSize[round][id][i] =
+          configurationToSuitSize[round][id - 1][i];
+    }
+    configurationToOffset[round][id] = configurationToOffset[round][id - 1];
+    configurationToEqual[round][id] = configurationToEqual[round][id - 1];
+  }
+OUT:
+  configurationToOffset[round][id] = 1;
+  memcpy(this->configuration[round][id], configuration, N_SUITS);
+
+  int equal = 0;
+  for (int i = 0; i < N_SUITS;) {
+    int size = 1;
+    int j = 0;
+    for (int remaining = N_RANKS; j <= round; ++j) {
+      int ranks =
+          configuration[i] >> (ROUND_SHIFT * (rounds - j - 1)) & ROUND_MASK;
+      size *= nCrRanks[remaining][ranks];
+      remaining -= ranks;
+    }
+
+    j = i + 1;
+    while (j < N_SUITS && configuration[j] == configuration[i]) {
+      ++j;
+    }
+
+    for (int k = i; k < j; ++k) {
+      configurationToSuitSize[round][id][k] = size;
+    }
+
+    configurationToOffset[round][id] *= nCrGroups[size + j - i - 1][j - i];
+
+    for (int k = i + 1; k < j; ++k) {
+      equal |= 1 << k;
+    }
+
+    i = j;
+  }
+
+  configurationToEqual[round][id] = equal >> 1;
+}
+
+void HandIndexer::enumeratePermutations(bool tabulate) {
+  int used[N_SUITS];
+  int count[N_SUITS];
+
+  memset(used, 0, sizeof(int) * N_SUITS);
+  memset(count, 0, sizeof(int) * N_SUITS);
+
+  enumeratePermutationsR(0, cardsPerRound[0], 0, used, count, tabulate);
+}
+
+void HandIndexer::enumeratePermutationsR(int round, int remaining, int suit,
+                                         int* used, int* count, bool tabulate) {
+  if (suit == N_SUITS) {
+    if (tabulate) {
+      tabulatePermutations(round, count);
+    } else {
+      countPermutations(round, count);
+    }
+
+    if (round + 1 < rounds) {
+      enumeratePermutationsR(round + 1, cardsPerRound[round + 1], 0, used,
+                             count, tabulate);
+    }
+  } else {
+    int min = 0;
+    if (suit == N_SUITS - 1) {
+      min = remaining;
+    }
+
+    int max = N_RANKS - used[suit];
+    if (remaining < max) {
+      max = remaining;
+    }
+
+    int oldCount = count[suit], oldUsed = used[suit];
+    for (int i = min; i <= max; ++i) {
+      int newCount = oldCount | i << (ROUND_SHIFT * (rounds - round - 1));
+
+      used[suit] = oldUsed + i;
+      count[suit] = newCount;
+      enumeratePermutationsR(round, remaining - i, suit + 1, used, count,
+                             tabulate);
+      count[suit] = oldCount;
+      used[suit] = oldUsed;
+    }
+  }
+}
+
+void HandIndexer::countPermutations(int round, int* count) {
+  int idx = 0, mult = 1;
+  for (int i = 0; i <= round; ++i) {
+    for (int j = 0, remaining = cardsPerRound[i]; j < N_SUITS - 1; ++j) {
+      int size = count[j] >> ((rounds - i - 1) * ROUND_SHIFT) & ROUND_MASK;
+      idx += mult * size;
+      mult *= remaining + 1;
+      remaining -= size;
+    }
+  }
+
+  if (permutations[round] < idx + 1) {
+    permutations[round] = idx + 1;
+  }
+}
+
+void HandIndexer::tabulatePermutations(int round, int* count) {
+  int idx = 0, mult = 1;
+  for (int i = 0; i <= round; ++i) {
+    for (int j = 0, remaining = cardsPerRound[i]; j < N_SUITS - 1; ++j) {
+      int size = count[j] >> ((rounds - i - 1) * ROUND_SHIFT) & ROUND_MASK;
+      idx += mult * size;
+      mult *= remaining + 1;
+      remaining -= size;
+    }
+  }
+
+  int pi[N_SUITS];
+  for (int i = 0; i < N_SUITS; ++i) {
+    pi[i] = i;
+  }
+
+  for (int i = 1; i < N_SUITS; ++i) {
+    int j = i, pi_i = pi[i];
+    for (; j > 0; --j) {
+      if (count[pi_i] > count[pi[j - 1]]) {
+        pi[j] = pi[j - 1];
+      } else {
+        break;
+      }
+    }
+    pi[j] = pi_i;
+  }
+
+  int pi_idx = 0, pi_mult = 1, pi_used = 0;
+  for (int i = 0; i < N_SUITS; ++i) {
+    int this_bit = (1 << pi[i]);
+    int smaller = std::popcount((uint32_t)((this_bit - 1) & pi_used));
+    pi_idx += (pi[i] - smaller) * pi_mult;
+    pi_mult *= N_SUITS - i;
+    pi_used |= this_bit;
+  }
+
+  permutationToPi[round][idx] = pi_idx;
+
+  int low = 0, high = configurations[round];
+  while (low < high) {
+    int mid = (low + high) / 2;
+
+    int compare = 0;
+    for (int i = 0; i < N_SUITS; ++i) {
+      int that = count[pi[i]];
+      int other = configuration[round][mid][i];
+      if (other > that) {
+        compare = -1;
+        break;
+      } else if (other < that) {
+        compare = 1;
+        break;
+      }
+    }
+
+    if (compare == -1) {
+      high = mid;
+    } else if (compare == 0) {
+      low = high = mid;
+    } else {
+      low = mid + 1;
+    }
+  }
+
+  permutationToConfiguration[round][idx] = low;
 }
 
 }  // namespace pokerai

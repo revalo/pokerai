@@ -32,6 +32,12 @@ class HandIndexer {
   void EnumerateConfigurations(bool tabulate);
   void enumerateConfigurationsR(int round, int remaining, int suit, int equal,
                                 int* used, int* configuration, bool tabulate);
+  void tabulateConfigurations(int round, int* configuration);
+  void enumeratePermutations(bool tabulate);
+  void enumeratePermutationsR(int round, int remaining, int suit, int* used,
+                              int* count, bool tabulate);
+  void countPermutations(int round, int* count);
+  void tabulatePermutations(int round, int* count);
 
  public:
   int nthUnset[1 << N_RANKS][N_RANKS] = {0};

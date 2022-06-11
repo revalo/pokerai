@@ -1,6 +1,8 @@
 #ifndef HAND_INDEX_H
 #define HAND_INDEX_H
 
+#include <vector>
+
 #define N_SUITS 4
 #define N_RANKS 13
 #define N_CARDS 52
@@ -27,6 +29,10 @@ class HandIndexerState {
 };
 
 class HandIndexer {
+  void EnumerateConfigurations(bool tabulate);
+  void enumerateConfigurationsR(int round, int remaining, int suit, int equal,
+                                int* used, int* configuration, bool tabulate);
+
  public:
   int nthUnset[1 << N_RANKS][N_RANKS] = {0};
   bool equal[1 << (N_SUITS - 1)][N_SUITS] = {false};
@@ -37,20 +43,20 @@ class HandIndexer {
   long (*nCrGroups)[N_SUITS + 1] = {0};
 
   int rounds;
-  int* cardsPerRound;
+  std::vector<int> cardsPerRound;
   int* configurations;
   int* permutations;
   long* roundSize;
   int* roundStart;
-  int* permutationToConfiguration;
-  int* permutationToPi;
-  int* configurationToEqual;
-  int* configuration;
-  int* configurationToSuitSize;
-  long* configurationToOffset;
+  int** permutationToConfiguration;
+  int** permutationToPi;
+  int** configurationToEqual;
+  int*** configuration;
+  int*** configurationToSuitSize;
+  long** configurationToOffset;
   int* publicFlopHands;
 
-  HandIndexer();
+  HandIndexer(std::vector<int> cardsPerRound);
   ~HandIndexer();
 };
 }  // namespace pokerai

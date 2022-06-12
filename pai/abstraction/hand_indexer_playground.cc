@@ -19,5 +19,11 @@ void main() {
   int cards[7] = {0};
   handIndexer.unindex(3, 7812, cards);
 
+  std::cout << "Cards: ";
+  for (int i = 0; i < 7; i++) {
+    std::cout << cards[i] << " ";
+  }
+  std::cout << std::endl;
+
   std::cout << "Done!" << std::endl;
 }

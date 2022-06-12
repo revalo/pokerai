@@ -130,4 +130,15 @@ void HandDistribution::getHandDistribution(uint64_t playerCardsMask,
     distribution.push_back(strength);
   }
 }
+
+void HandDistribution::makeBuckets(const std::vector<float> &distribution, uint16_t *buckets,
+                 int numBuckets) {
+  memset(buckets, 0, numBuckets * sizeof(uint16_t));
+  for (auto &strength : distribution) {
+    int bucket = (int)std::floor(strength * numBuckets);
+    if (bucket >= numBuckets) bucket = numBuckets - 1;
+    buckets[bucket]++;
+  }
+}
+
 }  // namespace pokerai

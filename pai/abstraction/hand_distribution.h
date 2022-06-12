@@ -25,7 +25,10 @@ class HandDistribution {
                            std::vector<float> &distribution,
                            uint64_t existingBoardCardMask = 0,
                            int trials = 10000);
+  void makeBuckets(const std::vector<float> &distribution, uint16_t *buckets,
+                   int numBuckets);
 };
+
 }  // namespace pokerai
 
 #endif  // HAND_DIST_H

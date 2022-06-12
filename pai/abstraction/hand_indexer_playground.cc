@@ -17,7 +17,7 @@ void main() {
   }
 
   int cards[7] = {0};
-  handIndexer.unindex(2, 7812, cards);
+  handIndexer.unindex(3, 7812, cards);
 
   std::cout << "Done!" << std::endl;
 }

@@ -117,80 +117,76 @@ int main(int argc, char** argv) {
 
     // K-Means++ Initialization.
     cout << "KMeans++ Initialization." << endl;
-
-    std::vector<bool> chosen(distributionsMap.size(), false);
     std::vector<int64_t> centers(numClusters);
 
-    std::vector<std::vector<float>> centerDistances;
-    centerDistances.resize(numClusters,
-                           std::vector<float>(distributionsMap.size(), 0));
+    {
+      std::vector<bool> chosen(distributionsMap.size(), false);
+      std::vector<float> currentBestDistances(
+          distributionsMap.size(), std::numeric_limits<float>::infinity());
 
-    std::vector<float> currentBestDistances(
-        distributionsMap.size(), std::numeric_limits<float>::infinity());
+      // Step 1. Pick a random center.
+      centers[0] = rng.next() % distributionsMap.size();
+      chosen[centers[0]] = true;
 
-    // Step 1. Pick a random center.
-    centers[0] = rng.next() % distributionsMap.size();
-    chosen[centers[0]] = true;
-
-    for (int currentCenterIndex = 0; currentCenterIndex < numClusters;
-         currentCenterIndex++) {
-      if (currentCenterIndex % 10 == 0) {
-        cout << "Picking center " << currentCenterIndex << "("
-             << currentCenterIndex / (float)numClusters * 100.0f << "%)"
-             << endl;
-      }
-      std::vector<float>* currentCenter =
-          &(distributionsMap[centers[currentCenterIndex]]);
-
-      // Step 2. For each point, compute the distance to this newly added
-      std::for_each(std::execution::par, indexes.begin(), indexes.end(),
-                    [&](int64_t dataPoint) {
-                      if (chosen[dataPoint]) {
-                        return;
-                      }
-                      float d =
-                          emd(*currentCenter, distributionsMap[dataPoint]);
-                      d = d * d;
-
-                      centerDistances[currentCenterIndex][dataPoint] = d;
-                      if (d < currentBestDistances[dataPoint]) {
-                        currentBestDistances[dataPoint] = d;
-                      }
-                    });
-
-      if (currentCenterIndex == numClusters - 1) {
-        break;
-      }
-
-      // Step 3. Pick a random point based on the currentBestDistances.
-      double currentBestDistancesSum = 0;
-      for (int i = 0; i < distributionsMap.size(); i++) {
-        if (chosen[i]) {
-          continue;
+      for (int currentCenterIndex = 0; currentCenterIndex < numClusters;
+           currentCenterIndex++) {
+        if (currentCenterIndex % 10 == 0) {
+          cout << "Picking center " << currentCenterIndex << "("
+               << currentCenterIndex / (float)numClusters * 100.0f << "%)"
+               << endl;
         }
-        currentBestDistancesSum += currentBestDistances[i];
-      }
+        std::vector<float>* currentCenter =
+            &(distributionsMap[centers[currentCenterIndex]]);
 
-      int64_t newClusterCandidateIndex = -1;
-      do {
-        double randomPointer =
-            double(rng.next()) * currentBestDistancesSum / double(UINT64_MAX);
-        double current = 0.0f;
-        for (size_t i = 0; i < distributionsMap.size(); i++) {
+        // Step 2. For each point, compute the distance to this newly added
+        std::for_each(std::execution::par, indexes.begin(), indexes.end(),
+                      [&](int64_t dataPoint) {
+                        if (chosen[dataPoint]) {
+                          return;
+                        }
+                        float d =
+                            emd(*currentCenter, distributionsMap[dataPoint]);
+                        d = d * d;
+
+                        if (d < currentBestDistances[dataPoint]) {
+                          currentBestDistances[dataPoint] = d;
+                        }
+                      });
+
+        if (currentCenterIndex == numClusters - 1) {
+          break;
+        }
+
+        // Step 3. Pick a random point based on the currentBestDistances.
+        double currentBestDistancesSum = 0;
+        for (int i = 0; i < distributionsMap.size(); i++) {
           if (chosen[i]) {
             continue;
           }
-          current += currentBestDistances[i];
-          if (randomPointer < current) {
-            newClusterCandidateIndex = i;
-            break;
-          }
+          currentBestDistancesSum += currentBestDistances[i];
         }
-      } while (newClusterCandidateIndex == -1 ||
-               chosen[newClusterCandidateIndex]);
 
-      chosen[newClusterCandidateIndex] = true;
-      centers[currentCenterIndex + 1] = newClusterCandidateIndex;
+        int64_t newClusterCandidateIndex = -1;
+        do {
+          double randomPointer =
+              double(rng.next()) * currentBestDistancesSum / double(UINT64_MAX);
+          double current = 0.0f;
+          for (size_t i = 0; i < distributionsMap.size(); i++) {
+            if (chosen[i]) {
+              continue;
+            }
+            current += currentBestDistances[i];
+            if (randomPointer < current) {
+              newClusterCandidateIndex = i;
+              break;
+            }
+          }
+        } while (newClusterCandidateIndex == -1 ||
+                 chosen[newClusterCandidateIndex]);
+
+        chosen[newClusterCandidateIndex] = true;
+        centers[currentCenterIndex + 1] = newClusterCandidateIndex;
+      }
     }
 
     // Run traditional K-Means.

@@ -44,6 +44,8 @@ set(LIB_SOURCES
   ${ABSTRACTION_DIR}/hand_distribution.h
   ${ABSTRACTION_DIR}/hand_indexer.h
   ${ABSTRACTION_DIR}/hand_indexer.cc
+  ${ABSTRACTION_DIR}/ochs.h
+  ${ABSTRACTION_DIR}/ochs.cc
 )
 
 set(TEST_SOURCES

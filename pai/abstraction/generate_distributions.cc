@@ -63,8 +63,8 @@ int main(int argc, char** argv) {
   cout << "There are " << numIndexes << " non-isomorphic hands." << endl;
   cout << "Loading index vectors..." << endl;
 
-  std::vector<int> indexes(numIndexes);
-  for (int i = 0; i < numIndexes; i++) {
+  std::vector<int64_t> indexes(numIndexes);
+  for (int64_t i = 0; i < numIndexes; i++) {
     indexes[i] = i;
   }
 
@@ -116,7 +116,7 @@ int main(int argc, char** argv) {
                                           numSamples);
         distGenerator.makeBuckets(dist, buckets, NUM_BUCKETS);
 
-        int tag[1] = {index};
+        int64_t tag[1] = {index};
         char tagBuffer[sizeof(tag)];
         memcpy(tagBuffer, tag, sizeof(tag));
 
@@ -127,64 +127,6 @@ int main(int argc, char** argv) {
         numDone++;
         outputMutex.unlock();
       });
-
-  // if (round == "preflop") {
-  //   for (int i = 1; i <= 52; i++) {
-  //     cout << "Card " << i << endl;
-  //     for (int j = i + 1; j <= 52; j++) {
-  //       vector<float> dist;
-  //       uint64_t playerCardsMask = (1ULL << i) | (1ULL << j);
-  //       distGenerator.getHandDistribution(playerCardsMask, dist, 0,
-  //       numSamples); memcpy(buffer, dist.data(), sizeof(float) *
-  //       dist.size()); outputFile.write(buffer, sizeof(float) *
-  //       dist.size());
-  //     }
-  //   }
-  // } else if (round == "flop") {
-  //   // Player hand.
-  //   for (int i = 1; i <= 52; i++) {
-  //     cout << "Card " << i << endl;
-
-  //     vector<int> indexes;
-  //     for (int j = i + 1; j <= 52; j++) {
-  //       indexes.push_back(j);
-  //     }
-
-  //     std::for_each(
-  //         std::execution::par, indexes.begin(), indexes.end(),
-  //         [&distGenerator, &numSamples, &buffer, &outputFile,
-  //         &outputMutex,
-  //          i](auto&& j) {
-  //           // Flop cards.
-  //           for (int k = j + 1; k <= 52; k++) {
-  //             for (int l = k + 1; l <= 52; l++) {
-  //               for (int m = l + 1; m <= 52; m++) {
-  //                 vector<float> dist;
-  //                 uint64_t playerCardsMask = (1ULL << i) | (1ULL << j);
-  //                 uint64_t boardCardsMask =
-  //                     (1ULL << k) | (1ULL << l) | (1ULL << m);
-  //                 distGenerator.getHandDistribution(playerCardsMask,
-  //                 dist,
-  //                                                   boardCardsMask,
-  //                                                   numSamples);
-
-  //                 int tag[5] = {i, j, k, l, m};
-  //                 char tagBuffer[sizeof(tag)];
-  //                 memcpy(tagBuffer, tag, sizeof(tag));
-
-  //                 outputMutex.lock();
-  //                 memcpy(buffer, dist.data(), sizeof(float) *
-  //                 dist.size()); outputFile.write(tagBuffer, sizeof(tag));
-  //                 outputFile.write(buffer, sizeof(float) * dist.size());
-  //                 outputMutex.unlock();
-  //               }
-  //             }
-  //           }
-  //         });
-  //   }
-  // } else {
-  //   cout << "Unknown round: " << round << endl;
-  // }
 
   outputFile.close();
   delete[] buffer;

@@ -30,12 +30,13 @@ void ochsRiverDists() {
   pokerai::OCHS ochs(absl::GetFlag(FLAGS_preflop_cluster));
   size_t numHands = ochs.indexer->roundSize[3];
   cout << "River has " << numHands << " hands." << endl;
+  cout << "Num clusters " << ochs.numPreflopClusters << endl;
 
   string outputFilename = absl::GetFlag(FLAGS_output_file);
   cout << "Outputting to " << outputFilename << endl;
   ofstream outputFile(outputFilename, ios::out | ios::binary);
   mutex outputMutex;
-  char* buffer = new char[sizeof(float) * ochs.numPreflopClusters];
+  char *buffer = new char[sizeof(float) * ochs.numPreflopClusters];
 
   size_t numDone = 0;
 
@@ -100,7 +101,7 @@ void ochsRiverDists() {
   outputFile.close();
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   absl::ParseCommandLine(argc, argv);
 
   int numSamples = absl::GetFlag(FLAGS_num_samples);
@@ -121,7 +122,7 @@ int main(int argc, char** argv) {
   string outputFilename = absl::GetFlag(FLAGS_output_file);
   cout << "Outputting to " << outputFilename << endl;
 
-  char* buffer = new char[sizeof(float) * numSamples];
+  char *buffer = new char[sizeof(float) * numSamples];
   ofstream outputFile(outputFilename, ios::out | ios::binary);
   mutex outputMutex;
 
@@ -187,7 +188,7 @@ int main(int argc, char** argv) {
   std::for_each(
       std::execution::par, indexes.begin(), indexes.end(),
       [&distGenerator, &numSamples, &buffer, &outputFile, &outputMutex,
-       &handIndexer, &round, &numBoardCards, &numDone](auto&& index) {
+       &handIndexer, &round, &numBoardCards, &numDone](auto &&index) {
         vector<float> dist;
         uint16_t buckets[NUM_BUCKETS];
         int cards[7] = {0};

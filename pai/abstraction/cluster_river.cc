@@ -23,10 +23,10 @@ ABSL_FLAG(int, num_clusters, 8, "Number of clusters.");
 ABSL_FLAG(int, restarts, 10, "Number of restarts.");
 
 #define NUM_BUCKETS 8
-#define NUM_CHUNKS 16
+#define NUM_CHUNKS 64
 
-float squared_l2(const std::vector<uint16_t>& a,
-                 const std::vector<uint16_t>& b) {
+float squared_l2(const std::vector<uint16_t> &a,
+                 const std::vector<uint16_t> &b) {
   float sum = 0;
   float d = 0;
   uint8_t a_num, b_num, a_den, b_den;
@@ -46,8 +46,8 @@ float squared_l2(const std::vector<uint16_t>& a,
   return sum;
 }
 
-float squared_l2_float(const std::vector<double>& a,
-                       const std::vector<uint16_t>& b) {
+float squared_l2_float(const std::vector<double> &a,
+                       const std::vector<uint16_t> &b) {
   float sum = 0;
   float d = 0;
   uint8_t b_num, b_den;
@@ -65,21 +65,21 @@ float squared_l2_float(const std::vector<double>& a,
   return sum;
 }
 
-float getVariance(const std::string& inputFilename,
-                  const std::vector<short>& clusterAssignments,
-                  const std::vector<std::vector<double>>& clusterCenters) {
+float getVariance(const std::string &inputFilename,
+                  const std::vector<short> &clusterAssignments,
+                  const std::vector<std::vector<double>> &clusterCenters) {
   float variance = 0;
   std::ifstream inputFile(inputFilename, std::ios::binary);
 
   std::vector<uint16_t> thisDist(NUM_BUCKETS);
   int64_t handIndex;
   while (!inputFile.eof()) {
-    inputFile.read(reinterpret_cast<char*>(&handIndex), sizeof(int64_t));
-    inputFile.read(reinterpret_cast<char*>(thisDist.data()),
+    inputFile.read(reinterpret_cast<char *>(&handIndex), sizeof(int64_t));
+    inputFile.read(reinterpret_cast<char *>(thisDist.data()),
                    sizeof(uint16_t) * NUM_BUCKETS);
 
     int clusterId = clusterAssignments[handIndex];
-    const std::vector<double>& center = clusterCenters[clusterId];
+    const std::vector<double> &center = clusterCenters[clusterId];
     float d = squared_l2_float(center, thisDist);
     variance += d * d;
   }
@@ -88,30 +88,31 @@ float getVariance(const std::string& inputFilename,
   return variance / clusterCenters.size();
 }
 
-void getDistIndexedFromFile(const std::string& inputFilename, size_t index,
-                            std::vector<uint16_t>& dist) {
+void getDistIndexedFromFile(const std::string &inputFilename, size_t index,
+                            std::vector<uint16_t> &dist) {
   std::ifstream inputFile(inputFilename, std::ios::binary);
   while (!inputFile.eof()) {
     int64_t handIndex;
-    inputFile.read(reinterpret_cast<char*>(&handIndex), sizeof(int64_t));
-    inputFile.read(reinterpret_cast<char*>(dist.data()),
+    inputFile.read(reinterpret_cast<char *>(&handIndex), sizeof(int64_t));
+    inputFile.read(reinterpret_cast<char *>(dist.data()),
                    sizeof(uint16_t) * NUM_BUCKETS);
     if (handIndex == index) {
       return;
     }
   }
+  inputFile.close();
 
   cout << "Could not find hand " << index << endl;
 }
 
-void getDistIndexedFromFileFloat(const std::string& inputFilename, size_t index,
-                                 std::vector<double>& dist) {
+void getDistIndexedFromFileFloat(const std::string &inputFilename, size_t index,
+                                 std::vector<double> &dist) {
   std::ifstream inputFile(inputFilename, std::ios::binary);
   std::vector<uint16_t> dist_uint16(NUM_BUCKETS);
   while (!inputFile.eof()) {
     int64_t handIndex;
-    inputFile.read(reinterpret_cast<char*>(&handIndex), sizeof(int64_t));
-    inputFile.read(reinterpret_cast<char*>(dist_uint16.data()),
+    inputFile.read(reinterpret_cast<char *>(&handIndex), sizeof(int64_t));
+    inputFile.read(reinterpret_cast<char *>(dist_uint16.data()),
                    sizeof(uint16_t) * NUM_BUCKETS);
     if (handIndex == index) {
       uint8_t num, den;
@@ -123,18 +124,19 @@ void getDistIndexedFromFileFloat(const std::string& inputFilename, size_t index,
       return;
     }
   }
+  inputFile.close();
 
   cout << "Could not find hand " << index << endl;
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   absl::ParseCommandLine(argc, argv);
 
   pokerai::RandomNumberGenerator rng;
   pokerai::HandIndexer handIndexer(std::vector<int>{2, 3, 1, 1});
 
-  //   size_t numHands = handIndexer.roundSize[3];
-  size_t numHands = 100000;
+  size_t numHands = handIndexer.roundSize[3];
+  // size_t numHands = 100000;
 
   cout << "River has " << numHands << " hands." << endl;
 
@@ -201,9 +203,9 @@ int main(int argc, char** argv) {
               std::vector<uint16_t> thisDist(NUM_BUCKETS);
               int64_t handIndex;
               for (size_t i = start; i < end; i++) {
-                inputFile.read(reinterpret_cast<char*>(&handIndex),
+                inputFile.read(reinterpret_cast<char *>(&handIndex),
                                sizeof(int64_t));
-                inputFile.read(reinterpret_cast<char*>(thisDist.data()),
+                inputFile.read(reinterpret_cast<char *>(thisDist.data()),
                                sizeof(uint16_t) * NUM_BUCKETS);
 
                 if (chosen[handIndex]) {
@@ -292,9 +294,9 @@ int main(int argc, char** argv) {
             std::vector<uint16_t> thisDist(NUM_BUCKETS);
             int64_t handIndex;
             for (size_t i = start; i < end; i++) {
-              inputFile.read(reinterpret_cast<char*>(&handIndex),
+              inputFile.read(reinterpret_cast<char *>(&handIndex),
                              sizeof(int64_t));
-              inputFile.read(reinterpret_cast<char*>(thisDist.data()),
+              inputFile.read(reinterpret_cast<char *>(thisDist.data()),
                              sizeof(uint16_t) * NUM_BUCKETS);
 
               float minDistance = std::numeric_limits<float>::infinity();
@@ -315,7 +317,7 @@ int main(int argc, char** argv) {
       // Reset the cluster centers to 0.
       for (int i = 0; i < numClusters; i++) {
         clusterSizes[i] = 0;
-        std::vector<double>& cluster = clusterCenters[i];
+        std::vector<double> &cluster = clusterCenters[i];
         for (int j = 0; j < NUM_BUCKETS; j++) {
           cluster[j] = 0;
         }
@@ -325,13 +327,13 @@ int main(int argc, char** argv) {
       std::vector<uint16_t> thisDist(NUM_BUCKETS);
       int64_t handIndex;
       while (!inputFile.eof()) {
-        inputFile.read(reinterpret_cast<char*>(&handIndex), sizeof(int64_t));
-        inputFile.read(reinterpret_cast<char*>(thisDist.data()),
+        inputFile.read(reinterpret_cast<char *>(&handIndex), sizeof(int64_t));
+        inputFile.read(reinterpret_cast<char *>(thisDist.data()),
                        sizeof(uint16_t) * NUM_BUCKETS);
 
         int clusterIndex = clusterAssignments[handIndex];
         clusterSizes[clusterIndex]++;
-        std::vector<double>& cluster = clusterCenters[clusterIndex];
+        std::vector<double> &cluster = clusterCenters[clusterIndex];
         for (int j = 0; j < NUM_BUCKETS; j++) {
           cluster[j] += thisDist[j];
         }
@@ -340,7 +342,7 @@ int main(int argc, char** argv) {
 
       // Compute means.
       for (int i = 0; i < numClusters; i++) {
-        std::vector<double>& cluster = clusterCenters[i];
+        std::vector<double> &cluster = clusterCenters[i];
         for (int j = 0; j < NUM_BUCKETS; j++) {
           cluster[j] /= clusterSizes[i];
         }
@@ -376,14 +378,14 @@ int main(int argc, char** argv) {
 
   cout << "Best error: " << bestError << endl;
 
-  //   // Write the results to a file.
-  //   std::string outputFilename = absl::GetFlag(FLAGS_output_file);
-  //   std::cout << "Writing results to " << outputFilename << std::endl;
-  //   std::ofstream outFile(outputFilename);
-  //   for (int i = 0; i < distributionsMap.size(); i++) {
-  //     outFile << bestAssignments[i] << std::endl;
-  //   }
-  //   outFile.close();
+  // Write the results to a file.
+  std::string outputFilename = absl::GetFlag(FLAGS_output_file);
+  std::cout << "Writing results to " << outputFilename << std::endl;
+  std::ofstream outFile(outputFilename);
+  for (int i = 0; i < bestAssignments.size(); i++) {
+    outFile << bestAssignments[i] << std::endl;
+  }
+  outFile.close();
 
   return 0;
 }

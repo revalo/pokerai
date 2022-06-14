@@ -33,6 +33,16 @@ float emd(const std::vector<float>& a, const std::vector<float>& b) {
   return sum;
 }
 
+float squared_l2(const std::vector<float>& a, const std::vector<float>& b) {
+  float sum = 0;
+  float d = 0;
+  for (size_t i = 0; i < a.size(); i++) {
+    d = (a[i] - b[i]);
+    sum += d * d;
+  }
+  return sum;
+}
+
 float getVariance(
     const absl::flat_hash_map<int64_t, std::vector<float>>& distributionsMap,
     const std::vector<int>& clusterAssignments,

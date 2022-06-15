@@ -169,6 +169,13 @@ int main(int argc, char **argv) {
   size_t numHands = handIndexer.roundSize[3];
   // size_t numHands = 100000;
 
+  // Build chunked index for parallel chunked file reading.
+  std::vector<int> chunkIndexes(NUM_CHUNKS);
+  for (int i = 0; i < NUM_CHUNKS; i++) {
+    chunkIndexes[i] = i;
+  }
+  size_t chunkSize = numHands / NUM_CHUNKS;
+
   cout << "River has " << numHands << " hands." << endl;
 
   string inputFilename = absl::GetFlag(FLAGS_input_file);
@@ -186,18 +193,30 @@ int main(int argc, char **argv) {
 
   // 19 GB.
   std::vector<int64_t> handStreamPos(numHands, 0);
-  std::vector<uint16_t> scratch(NUM_BUCKETS);
+
   cout << "Reading file ..." << endl;
-  size_t bytesRead = 0;
-  while (!inputFile.eof()) {
-    int64_t handIndex;
-    inputFile.read(reinterpret_cast<char *>(&handIndex), sizeof(int64_t));
-    inputFile.read(reinterpret_cast<char *>(scratch.data()),
-                   sizeof(uint16_t) * NUM_BUCKETS);
-    handStreamPos[handIndex] = bytesRead;
-    bytesRead += sizeof(int64_t) + sizeof(uint16_t) * NUM_BUCKETS;
-  }
-  inputFile.close();
+  std::for_each(
+      std::execution::par, chunkIndexes.begin(), chunkIndexes.end(),
+      [&](int chunkIndex) {
+        bool last = chunkIndex == NUM_CHUNKS - 1;
+        size_t start = chunkIndex * chunkSize;
+        size_t end = last ? numHands : (chunkIndex + 1) * chunkSize;
+        ifstream inputFile(inputFilename, ios::in | ios::binary);
+        size_t currentStreamPos =
+            start * (sizeof(int64_t) + sizeof(uint16_t) * NUM_BUCKETS);
+        inputFile.seekg(currentStreamPos);
+        std::vector<uint16_t> thisDist(NUM_BUCKETS);
+        int64_t handIndex;
+        for (size_t i = start; i < end; i++) {
+          inputFile.read(reinterpret_cast<char *>(&handIndex), sizeof(int64_t));
+          inputFile.read(reinterpret_cast<char *>(thisDist.data()),
+                         sizeof(uint16_t) * NUM_BUCKETS);
+
+          handStreamPos[handIndex] = currentStreamPos;
+          currentStreamPos += sizeof(int64_t) + sizeof(uint16_t) * NUM_BUCKETS;
+        }
+        inputFile.close();
+      });
 
   cout << "Done building file index." << endl;
 
@@ -236,12 +255,6 @@ int main(int argc, char **argv) {
         getDistIndexedFromFile(inputFilename,
                                handStreamPos[centers[currentCenterIndex]],
                                currentCenter);
-
-        std::vector<int> chunkIndexes(NUM_CHUNKS);
-        for (int i = 0; i < NUM_CHUNKS; i++) {
-          chunkIndexes[i] = i;
-        }
-        size_t chunkSize = numHands / NUM_CHUNKS;
 
         cout << "Starting parallel" << endl;
 
@@ -338,12 +351,6 @@ int main(int argc, char **argv) {
     while (true) {
       std::cout << "Iteration " << numIterations << endl;
       // Find the closest center for each point.
-
-      std::vector<int> chunkIndexes(NUM_CHUNKS);
-      for (int i = 0; i < NUM_CHUNKS; i++) {
-        chunkIndexes[i] = i;
-      }
-      size_t chunkSize = numHands / NUM_CHUNKS;
 
       std::for_each(
           std::execution::par, chunkIndexes.begin(), chunkIndexes.end(),

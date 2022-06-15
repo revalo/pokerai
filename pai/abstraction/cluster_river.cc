@@ -177,23 +177,29 @@ int main(int argc, char **argv) {
 
       for (int currentCenterIndex = 0; currentCenterIndex < numClusters;
            currentCenterIndex++) {
-        if (currentCenterIndex % 10 == 0) {
-          cout << "Picking center " << currentCenterIndex << "("
-               << currentCenterIndex / (float)numClusters * 100.0f << "%)"
-               << endl;
-        }
+        // if (currentCenterIndex % 10 == 0) {
+        cout << "Picking center " << currentCenterIndex << "("
+             << currentCenterIndex / (float)numClusters * 100.0f << "%)"
+             << endl;
+        // }
         std::vector<uint16_t> currentCenter(NUM_BUCKETS);
         getDistIndexedFromFile(inputFilename, centers[currentCenterIndex],
                                currentCenter);
+
+        cout << "Making chunk indexes" << endl;
+
         std::vector<int> chunkIndexes(NUM_CHUNKS);
         for (int i = 0; i < NUM_CHUNKS; i++) {
           chunkIndexes[i] = i;
         }
         size_t chunkSize = numHands / NUM_CHUNKS;
 
+        cout << "Starting parallel" << endl;
+
         std::for_each(
             std::execution::par, chunkIndexes.begin(), chunkIndexes.end(),
             [&](int chunkIndex) {
+              cout << "Chunk " << chunkIndex << endl;
               bool last = chunkIndex == NUM_CHUNKS - 1;
               size_t start = chunkIndex * chunkSize;
               size_t end = last ? numHands : (chunkIndex + 1) * chunkSize;
@@ -207,6 +213,12 @@ int main(int argc, char **argv) {
                                sizeof(int64_t));
                 inputFile.read(reinterpret_cast<char *>(thisDist.data()),
                                sizeof(uint16_t) * NUM_BUCKETS);
+
+                if (handIndex < 0 || handIndex >= numHands) {
+                  cout << "Bad hand index: " << handIndex << " by "
+                       << chunkIndex << endl;
+                  exit(1);
+                }
 
                 if (chosen[handIndex]) {
                   continue;
@@ -223,6 +235,8 @@ int main(int argc, char **argv) {
         if (currentCenterIndex == numClusters - 1) {
           break;
         }
+
+        cout << "Done parallel" << endl;
 
         // Step 3. Pick a random point based on the currentBestDistances.
         double currentBestDistancesSum = 0;

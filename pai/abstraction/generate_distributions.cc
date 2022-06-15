@@ -72,6 +72,9 @@ void ochsRiverDists() {
 
     std::for_each(
         std::execution::par, indexes.begin(), indexes.end(), [&](size_t index) {
+          if (index >= numHands) {
+            return;
+          }
           std::vector<uint16_t> distribution(ochs.numPreflopClusters);
           int cards[7];
           ochs.indexer->unindex(3, index, cards);

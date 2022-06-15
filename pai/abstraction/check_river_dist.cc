@@ -54,11 +54,11 @@ int main(int argc, char **argv) {
   inputFile.close();
 
   cout << "Checking!" << endl;
-  //   for (size_t i = 0; i < numHands; i++) {
-  //     if (!marked[i]) {
-  //       cout << "Hand " << i << " not marked." << endl;
-  //     }
-  //   }
+  for (size_t i = 0; i < numHands; i++) {
+    if (!marked[i]) {
+      cout << "Hand " << i << " not marked." << endl;
+    }
+  }
 
   cout << "Done!" << endl;
 

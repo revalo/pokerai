@@ -88,45 +88,76 @@ float getVariance(const std::string &inputFilename,
   return variance / clusterCenters.size();
 }
 
-void getDistIndexedFromFile(const std::string &inputFilename, size_t index,
+void getDistIndexedFromFile(const std::string &inputFilename, int64_t streamPos,
                             std::vector<uint16_t> &dist) {
+  // std::ifstream inputFile(inputFilename, std::ios::binary);
+  // while (!inputFile.eof()) {
+  //   int64_t handIndex;
+  //   inputFile.read(reinterpret_cast<char *>(&handIndex), sizeof(int64_t));
+  //   inputFile.read(reinterpret_cast<char *>(dist.data()),
+  //                  sizeof(uint16_t) * NUM_BUCKETS);
+  //   if (handIndex == index) {
+  //     return;
+  //   }
+  // }
+  // inputFile.close();
+
+  // cout << "Could not find hand " << index << endl;
   std::ifstream inputFile(inputFilename, std::ios::binary);
+  inputFile.seekg(streamPos);
   while (!inputFile.eof()) {
     int64_t handIndex;
     inputFile.read(reinterpret_cast<char *>(&handIndex), sizeof(int64_t));
     inputFile.read(reinterpret_cast<char *>(dist.data()),
                    sizeof(uint16_t) * NUM_BUCKETS);
-    if (handIndex == index) {
-      return;
-    }
+    break;
   }
   inputFile.close();
 
-  cout << "Could not find hand " << index << endl;
+  // cout << "Could not find hand " << index << endl;
 }
 
-void getDistIndexedFromFileFloat(const std::string &inputFilename, size_t index,
-                                 std::vector<double> &dist) {
+void getDistIndexedFromFileFloat(const std::string &inputFilename,
+                                 int64_t streamPos, std::vector<double> &dist) {
+  // std::ifstream inputFile(inputFilename, std::ios::binary);
+  // std::vector<uint16_t> dist_uint16(NUM_BUCKETS);
+  // while (!inputFile.eof()) {
+  //   int64_t handIndex;
+  //   inputFile.read(reinterpret_cast<char *>(&handIndex), sizeof(int64_t));
+  //   inputFile.read(reinterpret_cast<char *>(dist_uint16.data()),
+  //                  sizeof(uint16_t) * NUM_BUCKETS);
+  //   if (handIndex == index) {
+  //     uint8_t num, den;
+  //     for (size_t i = 0; i < NUM_BUCKETS; i++) {
+  //       num = dist_uint16[i] >> 8;
+  //       den = dist_uint16[i] & 0xFF;
+  //       dist[i] = (double)num / (double)den;
+  //     }
+  //     return;
+  //   }
+  // }
+  // inputFile.close();
+
+  // cout << "Could not find hand " << index << endl;
+
   std::ifstream inputFile(inputFilename, std::ios::binary);
+  inputFile.seekg(streamPos);
   std::vector<uint16_t> dist_uint16(NUM_BUCKETS);
   while (!inputFile.eof()) {
     int64_t handIndex;
     inputFile.read(reinterpret_cast<char *>(&handIndex), sizeof(int64_t));
     inputFile.read(reinterpret_cast<char *>(dist_uint16.data()),
                    sizeof(uint16_t) * NUM_BUCKETS);
-    if (handIndex == index) {
-      uint8_t num, den;
-      for (size_t i = 0; i < NUM_BUCKETS; i++) {
-        num = dist_uint16[i] >> 8;
-        den = dist_uint16[i] & 0xFF;
-        dist[i] = (double)num / (double)den;
-      }
-      return;
+
+    uint8_t num, den;
+    for (size_t i = 0; i < NUM_BUCKETS; i++) {
+      num = dist_uint16[i] >> 8;
+      den = dist_uint16[i] & 0xFF;
+      dist[i] = (double)num / (double)den;
     }
+    break;
   }
   inputFile.close();
-
-  cout << "Could not find hand " << index << endl;
 }
 
 int main(int argc, char **argv) {
@@ -150,6 +181,22 @@ int main(int argc, char **argv) {
     cout << "Could not open file: " << inputFilename << endl;
     return 1;
   }
+
+  cout << "Building file index ..." << endl;
+
+  // 19 GB.
+  std::vector<int64_t> handStreamPos(numHands, 0);
+  std::vector<uint16_t> scratch(NUM_BUCKETS);
+  while (!inputFile.eof()) {
+    int64_t handIndex;
+    inputFile.read(reinterpret_cast<char *>(&handIndex), sizeof(int64_t));
+    inputFile.read(reinterpret_cast<char *>(scratch.data()),
+                   sizeof(uint16_t) * NUM_BUCKETS);
+    handStreamPos[handIndex] = inputFile.tellg();
+  }
+  inputFile.close();
+
+  cout << "Done building file index." << endl;
 
   int numRead = 0;
 
@@ -183,10 +230,9 @@ int main(int argc, char **argv) {
              << endl;
         // }
         std::vector<uint16_t> currentCenter(NUM_BUCKETS);
-        getDistIndexedFromFile(inputFilename, centers[currentCenterIndex],
+        getDistIndexedFromFile(inputFilename,
+                               handStreamPos[centers[currentCenterIndex]],
                                currentCenter);
-
-        cout << "Making chunk indexes" << endl;
 
         std::vector<int> chunkIndexes(NUM_CHUNKS);
         for (int i = 0; i < NUM_CHUNKS; i++) {
@@ -199,7 +245,6 @@ int main(int argc, char **argv) {
         std::for_each(
             std::execution::par, chunkIndexes.begin(), chunkIndexes.end(),
             [&](int chunkIndex) {
-              cout << "Chunk " << chunkIndex << endl;
               bool last = chunkIndex == NUM_CHUNKS - 1;
               size_t start = chunkIndex * chunkSize;
               size_t end = last ? numHands : (chunkIndex + 1) * chunkSize;
@@ -280,7 +325,8 @@ int main(int argc, char **argv) {
     // Seed with the centers we already found.
     for (int i = 0; i < numClusters; i++) {
       clusterAssignments[centers[i]] = i;
-      getDistIndexedFromFileFloat(inputFilename, centers[i], clusterCenters[i]);
+      getDistIndexedFromFileFloat(inputFilename, handStreamPos[centers[i]],
+                                  clusterCenters[i]);
     }
 
     int numIterations = 0;

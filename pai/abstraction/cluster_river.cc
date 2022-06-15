@@ -20,7 +20,7 @@ using namespace std;
 ABSL_FLAG(string, input_file, "river_dist_small.dat", "Input file.");
 ABSL_FLAG(string, output_file, "clusters.txt", "Output file.");
 ABSL_FLAG(int, num_clusters, 8, "Number of clusters.");
-ABSL_FLAG(int, restarts, 10, "Number of restarts.");
+ABSL_FLAG(int, restarts, 1, "Number of restarts.");
 
 #define NUM_BUCKETS 8
 #define NUM_CHUNKS 64
@@ -187,12 +187,15 @@ int main(int argc, char **argv) {
   // 19 GB.
   std::vector<int64_t> handStreamPos(numHands, 0);
   std::vector<uint16_t> scratch(NUM_BUCKETS);
+  cout << "Reading file ..." << endl;
+  size_t bytesRead = 0;
   while (!inputFile.eof()) {
     int64_t handIndex;
     inputFile.read(reinterpret_cast<char *>(&handIndex), sizeof(int64_t));
     inputFile.read(reinterpret_cast<char *>(scratch.data()),
                    sizeof(uint16_t) * NUM_BUCKETS);
-    handStreamPos[handIndex] = inputFile.tellg();
+    handStreamPos[handIndex] = bytesRead;
+    bytesRead += sizeof(int64_t) + sizeof(uint16_t) * NUM_BUCKETS;
   }
   inputFile.close();
 

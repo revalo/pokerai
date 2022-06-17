@@ -1,17 +1,12 @@
 #include <iostream>
-#include <thread>
+
+#include "game/nlhu_poker.h"
 
 using namespace std;
 
-void testThread() { std::cout << "I am a seperate thread..."; }
+int main() {
+  pokerai::game::NLHUPoker game("flop_clusters.txt", "turn_clusters.txt",
+                                "river_clusters.txt");
 
-void main() {
-  int playerIndex = 4;
-  int maxPlayers = 3;
-  cout << "Coerced player index: "
-       << (maxPlayers + (playerIndex % maxPlayers)) % maxPlayers << endl;
-  return;
-  cout << "Hello, World!" << endl;
-  thread newThread(testThread);
-  newThread.join();
+  return 0;
 }

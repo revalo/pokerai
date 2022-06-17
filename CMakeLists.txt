@@ -2,22 +2,23 @@ cmake_minimum_required(VERSION 3.10)
 
 project(PokerAI)
 
-set (CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 20)
 
 include(FetchContent)
 FetchContent_Declare(
   googletest
   URL https://github.com/google/googletest/archive/609281088cfefc76f9d0ce82e1ff6c30cc3591e5.zip
 )
+
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 add_subdirectory(pai/third_party/absl-cpp)
 add_subdirectory(pai/third_party/leveldb)
 add_subdirectory(pai/third_party/ompeval)
+
 # add_subdirectory(pai/third_party/pkmeans)
 # add_subdirectory(pai/third_party/isomorph)
-
 include_directories(
   pai/third_party
   pai/third_party/absl-cpp
@@ -40,6 +41,8 @@ set(LIB_SOURCES
   ${ROOT_DIR}/game/liars_dice.cc
   ${ROOT_DIR}/game/liars_dice.h
   ${ROOT_DIR}/game/game.h
+  ${ROOT_DIR}/game/nlhu_poker.cc
+  ${ROOT_DIR}/game/nlhu_poker.h
   ${ABSTRACTION_DIR}/hand_distribution.cc
   ${ABSTRACTION_DIR}/hand_distribution.h
   ${ABSTRACTION_DIR}/hand_indexer.h
@@ -67,6 +70,7 @@ add_executable(hand_indexer_playground pai/abstraction/hand_indexer_playground.c
 add_executable(cluster pai/abstraction/cluster.cc)
 add_executable(cluster_river pai/abstraction/cluster_river.cc)
 add_executable(check_river_dist pai/abstraction/check_river_dist.cc)
+target_link_libraries(playground pokerai absl::strings absl::flags absl::flags_parse)
 target_link_libraries(train_liars pokerai absl::strings absl::flags absl::flags_parse)
 target_link_libraries(play_liars pokerai absl::strings absl::flags absl::flags_parse)
 target_link_libraries(omp_playground pokerai absl::strings absl::flags absl::flags_parse)

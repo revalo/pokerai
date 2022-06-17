@@ -6,6 +6,7 @@
 
 #include "game/game.h"
 #include "game/liars_dice.h"
+#include "game/nlhu_poker.h"
 #include "infotable.h"
 #include "rng.h"
 
